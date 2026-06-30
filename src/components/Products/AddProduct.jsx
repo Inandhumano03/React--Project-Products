@@ -1,4 +1,10 @@
-import React, { useState, useContext } from "react";
+import React, {
+  useState,
+  useContext,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import { instance } from "../axios";
 import { toast } from "react-toastify";
 import useDocumentTitle from "../hooks/UseDocumentTitle";
@@ -27,9 +33,62 @@ export default function AddProduct({ setProducts }) {
     description: "",
   });
 
+  const [errors, setErrors] = useState({
+    title: "",
+    description: ""
+  });
+
+  useEffect(() => {
+    console.log("AddProduct Mounted");
+
+    return () => {
+      console.log("AddProduct Unmounted");
+    };
+  }, []);
+
+  const validateForm = useCallback(() => {
+    let temp = {};
+
+    if (!state.title.trim())
+      temp.title = "Title is required";
+    else if (state.title.length < 3)
+      temp.title = "Minimum 3 characters";
+
+    if (!state.description.trim())
+      temp.description = "Description is required";
+    else if (state.description.length < 10)
+      temp.description =
+        "Minimum 10 characters";
+
+    setErrors(temp);
+
+    return Object.keys(temp).length === 0;
+  }, [state]);
+
+  const titleCharacters = useMemo(() => {
+    return state.title.length;
+  }, [state.title]);
+
+  const descriptionCharacters = useMemo(() => {
+    return state.description.length;
+  }, [state.description]);
+
+  const isFormValid =
+    state.title.trim().length >= 3 &&
+    state.description.trim().length >= 10;
+
+  const handleChange = useCallback((e) => {
+    const { name, value } = e.target;
+
+    setState((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  }, []);
   const [loading, setLoading] = useState(false);
 
-  const addProduct = async () => {
+  const addProduct = useCallback(async () => {
+    if (!validateForm()) return;
     if (!state.title.trim()) {
       toast.warning("Title Required");
       return;
@@ -75,7 +134,7 @@ export default function AddProduct({ setProducts }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [state, validateForm, setProducts]);
 
   return (
     <Box
@@ -126,13 +185,20 @@ export default function AddProduct({ setProducts }) {
               fullWidth
               label="Product Title"
               variant="outlined"
+              name="title"
               value={state.title}
-              onChange={(e) =>
-                setState({
-                  ...state,
-                  title: e.target.value,
-                })
+              onChange={handleChange}
+              error={Boolean(errors.title)}
+              helperText={
+                errors.title ||
+                `${titleCharacters}/50 Characters`
               }
+              slotProps={{
+                htmlInput: {
+                  maxLength: 50,
+                },
+              }}
+
               sx={{
                 "& .MuiInputLabel-root": {
                   color: darkMode
@@ -170,14 +236,19 @@ export default function AddProduct({ setProducts }) {
               rows={5}
               label="Product Description"
               variant="outlined"
+              name="description"
               value={state.description}
-              onChange={(e) =>
-                setState({
-                  ...state,
-                  description:
-                    e.target.value,
-                })
+              error={Boolean(errors.title)}
+              helperText={
+                errors.description ||
+                `${descriptionCharacters}/200 Characters`
               }
+              slotProps={{
+                htmlInput: {
+                  maxLength: 200,
+                },
+              }}
+              onChange={handleChange}
               sx={{
                 "& .MuiInputLabel-root": {
                   color: darkMode
@@ -208,23 +279,44 @@ export default function AddProduct({ setProducts }) {
                 },
               }}
             />
-
+            {state.title && (
+              <Typography
+                color="success.main"
+                variant="body2"
+              >
+                Preview: {state.title}
+              </Typography>
+            )}
             <Button
               variant="contained"
               size="large"
               onClick={addProduct}
-              disabled={loading}
+              disabled={loading || !isFormValid}
               sx={{
                 py: 1.5,
                 borderRadius: 2,
                 fontWeight: "bold",
-                textTransform:
-                  "none",
+                textTransform: "none",
               }}
             >
-              {loading
-                ? "Adding..."
-                : "Add Product"}
+              {loading ? "Adding..." : "Add Product"}
+            </Button>
+            <Button
+              color="secondary"
+              variant="outlined"
+              onClick={() => {
+                setState({
+                  title: "",
+                  description: "",
+                });
+
+                setErrors({
+                  title: "",
+                  description: "",
+                });
+              }}
+            >
+              Reset
             </Button>
           </Stack>
         </Card>

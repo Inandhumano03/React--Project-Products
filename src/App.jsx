@@ -18,14 +18,17 @@ function App() {
   const {
     darkMode
   } = useContext(ThemeContext);
-  const [products, setProducts] = useState(() => {
+  const [products, setProducts] = useState([]);
+
+  useEffect(() => {
     const storedProducts = localStorage.getItem("products");
 
-    return storedProducts
-      ? JSON.parse(storedProducts)
-      : [];
-  });
-
+    if (storedProducts) {
+      setProducts(JSON.parse(storedProducts));
+    } else {
+      fetchProducts(); // Your API call
+    }
+  }, []);
   useEffect(() => {
     const fetchProducts = async () => {
       const storedProducts = localStorage.getItem("products");
@@ -67,7 +70,11 @@ function App() {
         : "bg-blue-500 text-white"
     }>
       <div>
-        <ToastContainer position="top-right" />
+        <ToastContainer
+          position="top-right"
+          autoClose={2000}
+          theme="colored"
+        />
 
         <Navbar />
 

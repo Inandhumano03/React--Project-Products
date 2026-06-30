@@ -8,15 +8,21 @@ import {
   Button,
   Grid,
 } from "@mui/material";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+} from "@mui/material";
+import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
+import { toast, ToastContainer } from "react-toastify";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
 import CancelIcon from "@mui/icons-material/Cancel";
 import useDocumentTitle from "../hooks/UseDocumentTitle";
-import {
-  useMemo, useCallback, useContext
-} from "react";
-import React, { useState } from "react";
+import React, { useState, useRef, useMemo, useCallback, useContext } from "react";
 import { instance } from "../axios";
 import useDebounce from "../hooks/useDebounce";
 import ThemeToggle from "../hooks/ThemeToggle";
@@ -36,62 +42,136 @@ export default function ListOfProducts({
 
   const [expandedId, setExpandedId] =
     useState(null);
-
+  const deletedProductRef = useRef(null);
   // waits 500ms after typing stops
   const debouncedSearch =
     useDebounce(search, 500);
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState("");
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
+
+
   const [editDescription, setEditDescription] =
-    useState(""); const deleteProduct = useCallback(
-      async (id) => {
+    useState("");
 
-        console.log(
-          "Deleting Product:",
-          id
-        );
+  const handleDeleteClick = (id) => {
+    setSelectedId(id);
+    setOpenDialog(true);
+  };
 
-        try {
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setSelectedId(null);
+  };
 
-          // Only call API for original
-          // DummyJSON products
+  const handleConfirmDelete = (event) => {
+    if (event?.currentTarget) event.currentTarget.blur();
+    deleteProduct(selectedId);
+    handleCloseDialog();
+  };
+  const handleCancelDelete = () => {
+    setOpenDialog(false);
+    setSelectedId(null);
+  };
+  const deleteProduct = useCallback(
+    async (id) => {
+      const productToDelete = products.find(
+        (product) => product.id === id
+      );
 
-          if (id <= 194) {
+      if (!productToDelete) return;
 
-            await instance.delete(
-              `/products/${id}`
-            );
+      // Remove product immediately from UI
+      const updatedProducts = products.filter(
+        (product) => product.id !== id
+      );
 
-          }
+      setProducts(updatedProducts);
+      localStorage.setItem(
+        "products",
+        JSON.stringify(updatedProducts)
+      );
 
-        } catch (error) {
+      let undoClicked = false;
 
-          console.log(error);
+      toast.warning(
+        ({ closeToast }) => (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              width: "100%",
+            }}
+          >
+            <span>Product Deleted</span>
 
-        } finally {
+            <Button
+              variant="contained"
+              color="secondary"
+              size="small"
+              sx={{
+                ml: 2,
+                px: 2,
+                py: 0.5,
+                borderRadius: 2,
+                textTransform: "none",
+                fontWeight: "bold",
+                boxShadow: 2,
+                "&:hover": {
+                  boxShadow: 5,
+                  transform: "translateY(-1px)",
+                },
+                transition: "0.2s",
+              }}
+              onClick={() => {
+                undoClicked = true;
 
-          setProducts((prev) => {
-            const updatedProducts = prev.filter(
-              (product) => product.id !== id
-            );
+                setProducts((prev) => {
+                  const restoredProducts = [...prev, productToDelete].sort(
+                    (a, b) => a.id - b.id
+                  );
 
-            localStorage.setItem(
-              "products",
-              JSON.stringify(updatedProducts)
-            );
+                  localStorage.setItem(
+                    "products",
+                    JSON.stringify(restoredProducts)
+                  );
 
-            return updatedProducts;
-          });
+                  return restoredProducts;
+                });
 
-          console.log(
-            "Product Deleted"
-          );
+                closeToast();
+              }}
 
+            >
+              Undo
+            </Button>
+          </div>
+        ),
+        {
+          autoClose: 2000,
+
+          onClose: async () => {
+            // If Undo wasn't clicked,
+            // permanently delete
+            if (!undoClicked) {
+              try {
+                if (id <= 194) {
+                  await instance.delete(
+                    `/products/${id}`
+                  );
+                }
+              } catch (error) {
+                console.log(error);
+              }
+            }
+          },
         }
-
-      },
-      [setProducts]
-    );
+      );
+    },
+    [products, setProducts]
+  );
 
   const startEditing = (product) => {
     setEditingId(product.id);
@@ -145,7 +225,7 @@ export default function ListOfProducts({
 
         setEditingId(null);
 
-        console.log(
+        toast.success(
           "Product Updated"
         );
 
@@ -153,7 +233,7 @@ export default function ListOfProducts({
 
         console.log(error);
 
-        console.log(
+        toast.log(
           "Update Failed"
         );
 
@@ -197,6 +277,88 @@ export default function ListOfProducts({
           : "#f8fafc",
       }}
     >
+      <Dialog
+        open={openDialog}
+        onClose={handleCancelDelete}
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 4,
+              width: 400,
+              p: 1,
+            },
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            fontWeight: "bold",
+            color: "#d32f2f",
+            pb: 1,
+          }}
+        >
+          <WarningAmberRoundedIcon
+            color="error"
+            fontSize="large"
+          />
+
+          Confirm Deletion
+        </DialogTitle>
+
+
+        <DialogContent>
+          <Typography variant="body1">
+            Are you sure you want to delete this product?
+          </Typography>
+
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 1 }}
+          >
+            This action cannot be undone.
+          </Typography>
+        </DialogContent>
+
+
+        <DialogActions
+          sx={{
+            px: 3,
+            pb: 2,
+            gap: 1,
+          }}
+        >
+          <Button
+            onClick={handleCancelDelete}
+            variant="outlined"
+            color="inherit"
+            sx={{
+              borderRadius: 2,
+              textTransform: "none",
+              px: 3,
+            }}
+          >
+            No
+          </Button>
+
+          <Button
+            onClick={handleConfirmDelete}
+            variant="contained"
+            color="error"
+            sx={{
+              borderRadius: 2,
+              textTransform: "none",
+              px: 3,
+              fontWeight: "bold",
+            }}
+          >
+            Yes, Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Typography
         variant="h4"
         fontWeight="bold"
@@ -262,256 +424,277 @@ export default function ListOfProducts({
           },
         }}
       />
-
-      <Grid
-        size={12}
+      <Typography
+        variant="body1"
+        sx={{
+          mb: 2,
+          color: darkMode ? "#cbd5e1" : "#64748b",
+        }}
       >
-        {filteredProducts.map(
-          (product) => (
-            <Grid
-              item
-              xs={12}
-              key={product.id}
-              sx={{
-                mb: 4, // Increase to 5 or 6 if you want more space
-              }}
-            >
-              <Card
+        Showing {filteredProducts.length} of {products.length} Products
+      </Typography>
+
+      {filteredProducts.length === 0 ? (
+        <Typography
+          variant="h6"
+          align="center"
+          sx={{
+            mt: 4,
+            color: darkMode ? "#ffffff" : "#000000",
+          }}
+        >
+          No Products Found
+        </Typography>
+      ) : (
+        <Grid
+          size={12}
+        >
+          {filteredProducts.map(
+            (product) => (
+              <Grid
+                size={12}
+                key={product.id}
                 sx={{
-                  width: "100%",
-
-                  borderRadius: 4,
-
-                  boxShadow: 5,
-
-                  transition: "0.3s",
-
-                  bgcolor: darkMode
-                    ? "#1e293b"
-                    : "#ffffff",
-
-                  color: darkMode
-                    ? "#ffffff"
-                    : "#000000",
-
-                  "&:hover": {
-                    transform: "translateY(-5px)",
-                    boxShadow: 10,
-                  },
+                  mb: 4,
                 }}
               >
-                {editingId ===
-                  product.id ? (
-                  <CardContent
-                    sx={{
-                      p: 4,
-                    }}
-                  >
-                    <TextField
-                      fullWidth
-                      label="Title"
-                      value={editTitle}
-                      onChange={(e) =>
-                        setEditTitle(e.target.value)
-                      }
+                <Card
+                  sx={{
+                    width: "100%",
+
+                    borderRadius: 4,
+
+                    boxShadow: 5,
+
+                    transition: "0.3s",
+
+                    bgcolor: darkMode
+                      ? "#1e293b"
+                      : "#ffffff",
+
+                    color: darkMode
+                      ? "#ffffff"
+                      : "#000000",
+
+                    "&:hover": {
+                      transform: "translateY(-5px)",
+                      boxShadow: 10,
+                    },
+                  }}
+                >
+                  {editingId ===
+                    product.id ? (
+                    <CardContent
                       sx={{
-                        mb: 2,
-                        gap: 2,
-                        "& .MuiInputLabel-root": {
-                          color: darkMode ? "#cbd5e1" : "#64748b",
-                        },
-
-                        "& .MuiOutlinedInput-root": {
-                          color: darkMode ? "#ffffff" : "#000000",
-
-                          "& fieldset": {
-                            borderColor: darkMode ? "#475569" : "#cbd5e1",
-                          },
-
-                          "&:hover fieldset": {
-                            borderColor: darkMode ? "#94a3b8" : "#64748b",
-                          },
-                        },
-
-                      }}
-                    />
-                    <TextField
-                      fullWidth
-                      multiline
-                      rows={4}
-                      label="Description"
-                      value={editDescription}
-                      onChange={(e) =>
-                        setEditDescription(e.target.value)
-                      }
-                      sx={{
-                        "& .MuiInputLabel-root": {
-                          color: darkMode ? "#cbd5e1" : "#64748b",
-                        },
-
-                        "& .MuiOutlinedInput-root": {
-                          color: darkMode ? "#ffffff" : "#000000",
-
-                          "& fieldset": {
-                            borderColor: darkMode ? "#475569" : "#cbd5e1",
-                          },
-
-                          "&:hover fieldset": {
-                            borderColor: darkMode ? "#94a3b8" : "#64748b",
-                          },
-                        },
-                      }}
-                    />
-
-                    <CardActions
-                      sx={{
-                        justifyContent: "flex-end",
-
-                        gap: 2,
-
-                        px: 4,
-
-                        pb: 3,
-
-                        pt: 1,
+                        p: 4,
                       }}
                     >
-                      <Button
-                        variant="contained"
-                        color="success"
-                        startIcon={
-                          <SaveIcon />
+                      <TextField
+                        fullWidth
+                        label="Title"
+                        value={editTitle}
+                        onChange={(e) =>
+                          setEditTitle(e.target.value)
                         }
-                        onClick={() =>
-                          updateProduct(
-                            product.id
-                          )
-                        }
-                      >
-                        Save
-                      </Button>
-
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        startIcon={
-                          <CancelIcon />
-                        }
-                        onClick={() =>
-                          setEditingId(
-                            null
-                          )
-                        }
-                      >
-                        Cancel
-                      </Button>
-                    </CardActions>
-                  </CardContent>
-                ) : (
-                  <>
-                    <CardContent>
-                      <Typography
-                        variant="h6"
-                        fontWeight="bold"
-                        gutterBottom
-                      >
-                        {product.title}
-                      </Typography>
-
-                      <Typography
-                        variant="body2"
                         sx={{
-                          color: darkMode
-                            ? "#cbd5e1"
-                            : "#64748b",
+                          mb: 2,
+                          gap: 2,
+                          "& .MuiInputLabel-root": {
+                            color: darkMode ? "#cbd5e1" : "#64748b",
+                          },
+
+                          "& .MuiOutlinedInput-root": {
+                            color: darkMode ? "#ffffff" : "#000000",
+
+                            "& fieldset": {
+                              borderColor: darkMode ? "#475569" : "#cbd5e1",
+                            },
+
+                            "&:hover fieldset": {
+                              borderColor: darkMode ? "#94a3b8" : "#64748b",
+                            },
+                          },
+
+                        }}
+                      />
+                      <TextField
+                        fullWidth
+                        multiline
+                        rows={4}
+                        label="Description"
+                        value={editDescription}
+                        onChange={(e) =>
+                          setEditDescription(e.target.value)
+                        }
+                        sx={{
+                          "& .MuiInputLabel-root": {
+                            color: darkMode ? "#cbd5e1" : "#64748b",
+                          },
+
+                          "& .MuiOutlinedInput-root": {
+                            color: darkMode ? "#ffffff" : "#000000",
+
+                            "& fieldset": {
+                              borderColor: darkMode ? "#475569" : "#cbd5e1",
+                            },
+
+                            "&:hover fieldset": {
+                              borderColor: darkMode ? "#94a3b8" : "#64748b",
+                            },
+                          },
+                        }}
+                      />
+
+                      <CardActions
+                        sx={{
+                          justifyContent: "flex-end",
+
+                          gap: 2,
+
+                          px: 4,
+
+                          pb: 3,
+
+                          pt: 1,
                         }}
                       >
-                        {expandedId ===
-                          product.id
-                          ? product.description
-                          : `${product.description.slice(
-                            0,
-                            120
-                          )}${product
-                            .description
-                            .length >
-                            120
-                            ? "..."
-                            : ""
-                          }`}
-                      </Typography>
-
-                      {product
-                        .description
-                        .length > 120 && (
-                          <Button
-                            size="small"
-                            sx={{
-                              mt: 1,
-                              p: 0,
-                            }}
-                            onClick={() =>
-                              setExpandedId(
-                                expandedId ===
-                                  product.id
-                                  ? null
-                                  : product.id
-                              )
-                            }
-                          >
-                            {expandedId ===
+                        <Button
+                          variant="contained"
+                          color="success"
+                          startIcon={
+                            <SaveIcon />
+                          }
+                          onClick={() =>
+                            updateProduct(
                               product.id
-                              ? "See Less"
-                              : "See More"}
-                          </Button>
-                        )}
+                            )
+                          }
+                        >
+                          Save
+                        </Button>
+
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          startIcon={
+                            <CancelIcon />
+                          }
+                          onClick={() =>
+                            setEditingId(
+                              null
+                            )
+                          }
+                        >
+                          Cancel
+                        </Button>
+                      </CardActions>
                     </CardContent>
+                  ) : (
+                    <>
+                      <CardContent>
+                        <Typography
+                          variant="h6"
+                          fontWeight="bold"
+                          gutterBottom
+                        >
+                          {product.title}
+                        </Typography>
 
-                    <CardActions
-                      sx={{
-                        px: 2,
-                        pb: 2,
-                        justifyContent:
-                          "flex-end",
-                        gap: 1,
-                      }}
-                    >
-                      <Button
-                        variant="contained"
-                        startIcon={
-                          <EditIcon />
-                        }
-                        onClick={() =>
-                          startEditing(
-                            product
-                          )
-                        }
-                      >
-                        Edit
-                      </Button>
-
-                      <Button
-                        variant="contained"
-                        color="error"
-                        startIcon={
-                          <DeleteIcon />
-                        }
-                        onClick={() =>
-                          deleteProduct(
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: darkMode
+                              ? "#cbd5e1"
+                              : "#64748b",
+                          }}
+                        >
+                          {expandedId ===
                             product.id
-                          )
-                        }
+                            ? product.description
+                            : `${product.description.slice(
+                              0,
+                              120
+                            )}${product
+                              .description
+                              .length >
+                              120
+                              ? "..."
+                              : ""
+                            }`}
+                        </Typography>
+
+                        {product
+                          .description
+                          .length > 120 && (
+                            <Button
+                              size="small"
+                              sx={{
+                                mt: 1,
+                                p: 0,
+                              }}
+                              onClick={() =>
+                                setExpandedId(
+                                  expandedId ===
+                                    product.id
+                                    ? null
+                                    : product.id
+                                )
+                              }
+                            >
+                              {expandedId ===
+                                product.id
+                                ? "See Less"
+                                : "See More"}
+                            </Button>
+                          )}
+                      </CardContent>
+
+                      <CardActions
+                        sx={{
+                          px: 2,
+                          pb: 2,
+                          justifyContent:
+                            "flex-end",
+                          gap: 1,
+                        }}
                       >
-                        Delete
-                      </Button>
-                    </CardActions>
-                  </>
-                )}
-              </Card>
-            </Grid>
-          )
-        )}
-      </Grid>
+                        <Button
+                          variant="contained"
+                          startIcon={
+                            <EditIcon />
+                          }
+                          onClick={() =>
+                            startEditing(
+                              product
+                            )
+                          }
+                        >
+                          Edit
+                        </Button>
+
+                        <Button
+                          variant="contained"
+                          color="error"
+                          startIcon={
+                            <DeleteIcon />
+                          }
+                          onClick={() =>
+                            handleDeleteClick(product.id)
+                          }
+                        >
+                          Delete
+                        </Button>
+                      </CardActions>
+                    </>
+                  )}
+                </Card>
+              </Grid>
+            )
+          )}
+        </Grid>
+      )}
     </Container>
   );
 }
+
+
