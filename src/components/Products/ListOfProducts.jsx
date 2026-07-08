@@ -27,7 +27,6 @@ import { instance } from "../axios";
 import useDebounce from "../hooks/useDebounce";
 import ThemeToggle from "../hooks/ThemeToggle";
 import { ThemeContext } from "../context/ThemeContext";
-import { localId } from "../utils/localId";
 export default function
   ListOfProducts({
     products,
