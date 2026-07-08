@@ -20,48 +20,24 @@ function App() {
   } = useContext(ThemeContext);
   const [products, setProducts] = useState([]);
 
-  useEffect(() => {
-    const storedProducts = localStorage.getItem("products");
 
-    if (storedProducts) {
-      setProducts(JSON.parse(storedProducts));
-    } else {
-      fetchProducts(); // Your API call
-    }
-  }, []);
-  useEffect(() => {
-    const fetchProducts = async () => {
-      const storedProducts = localStorage.getItem("products");
 
-      if (storedProducts) {
-        setProducts(JSON.parse(storedProducts));
-        return;
-      }
+  // useEffect(()=>{
+  // const getProducts = async () => {
+  //   try {
+  //     const response = await instance.get("/products");
+  //     console.log("fetched data", response
+  //     )
 
-      const response = await instance.get("/products");
+  //     if (response.status === 200) {
+  //       setProducts(response.data);
 
-      setProducts(response.data.products);
 
-      localStorage.setItem(
-        "products",
-        JSON.stringify(response.data.products)
-      );
-    };
-
-    fetchProducts();
-  }, []);
-
-  const getProducts = async () => {
-    try {
-      const response = await instance.get("/products");
-
-      if (response.status === 200) {
-        setProducts(response.data.products);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  //     }
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // }},[]);
 
   return (
     <BrowserRouter className={

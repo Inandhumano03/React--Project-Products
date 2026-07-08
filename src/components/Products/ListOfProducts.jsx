@@ -22,16 +22,17 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
 import CancelIcon from "@mui/icons-material/Cancel";
 import useDocumentTitle from "../hooks/UseDocumentTitle";
-import React, { useState, useRef, useMemo, useCallback, useContext } from "react";
+import React, { useState, useRef, useMemo, useCallback, useContext, useEffect } from "react";
 import { instance } from "../axios";
 import useDebounce from "../hooks/useDebounce";
 import ThemeToggle from "../hooks/ThemeToggle";
 import { ThemeContext } from "../context/ThemeContext";
 import { localId } from "../utils/localId";
-export default function ListOfProducts({
-  products,
-  setProducts,
-}) {
+export default function
+  ListOfProducts({
+    products,
+    setProducts,
+  }) {
   useDocumentTitle(
     "Product List"
   );
@@ -65,6 +66,22 @@ export default function ListOfProducts({
     setSelectedId(null);
   };
 
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await instance.get("/products");
+        console.log("fetched product", response)
+        setProducts(response.data);
+
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+
   const handleConfirmDelete = (event) => {
     if (event?.currentTarget) event.currentTarget.blur();
     deleteProduct(selectedId);
@@ -77,21 +94,17 @@ export default function ListOfProducts({
   const deleteProduct = useCallback(
     async (id) => {
       const productToDelete = products.find(
-        (product) => product.id === id
+        (product) => product._id === id
       );
 
       if (!productToDelete) return;
 
-      // Remove product immediately from UI
+      // Remove immediately from UI
       const updatedProducts = products.filter(
-        (product) => product.id !== id
+        (product) => product._id !== id
       );
 
       setProducts(updatedProducts);
-      localStorage.setItem(
-        "products",
-        JSON.stringify(updatedProducts)
-      );
 
       let undoClicked = false;
 
@@ -100,8 +113,8 @@ export default function ListOfProducts({
           <div
             style={{
               display: "flex",
-              alignItems: "center",
               justifyContent: "space-between",
+              alignItems: "center",
               width: "100%",
             }}
           >
@@ -109,41 +122,18 @@ export default function ListOfProducts({
 
             <Button
               variant="contained"
-              color="secondary"
               size="small"
-              sx={{
-                ml: 2,
-                px: 2,
-                py: 0.5,
-                borderRadius: 2,
-                textTransform: "none",
-                fontWeight: "bold",
-                boxShadow: 2,
-                "&:hover": {
-                  boxShadow: 5,
-                  transform: "translateY(-1px)",
-                },
-                transition: "0.2s",
-              }}
+              color="secondary"
               onClick={() => {
                 undoClicked = true;
 
-                setProducts((prev) => {
-                  const restoredProducts = [...prev, productToDelete].sort(
-                    (a, b) => a.id - b.id
-                  );
-
-                  localStorage.setItem(
-                    "products",
-                    JSON.stringify(restoredProducts)
-                  );
-
-                  return restoredProducts;
-                });
+                setProducts((prev) => [
+                  productToDelete,
+                  ...prev,
+                ]);
 
                 closeToast();
               }}
-
             >
               Undo
             </Button>
@@ -153,17 +143,21 @@ export default function ListOfProducts({
           autoClose: 2000,
 
           onClose: async () => {
-            // If Undo wasn't clicked,
-            // permanently delete
             if (!undoClicked) {
               try {
-                if (id <= 194) {
-                  await instance.delete(
-                    `/products/${id}`
-                  );
-                }
+                await instance.delete(`/products/${id}`);
+
+                toast.success("Product deleted permanently");
               } catch (error) {
                 console.log(error);
+
+                // Restore UI if backend delete failed
+                setProducts((prev) => [
+                  productToDelete,
+                  ...prev,
+                ]);
+
+                toast.error("Delete Failed");
               }
             }
           },
@@ -174,77 +168,37 @@ export default function ListOfProducts({
   );
 
   const startEditing = (product) => {
-    setEditingId(product.id);
+    setEditingId(product._id);
     setEditTitle(product.title);
     setEditDescription(product.description);
   };
 
   const updateProduct = useCallback(
     async (id) => {
-
-      console.log(
-        "Update Function Called"
-      );
-
       try {
+        const response = await instance.put(
+          `/products/${id}`,
+          {
+            title: editTitle,
+            description: editDescription,
+          }
+        );
 
-        // Only call API for original
-        // DummyJSON products
-
-        if (id <= 194) {
-
-          await instance.put(
-            `/products/${id}`,
-            {
-              title: editTitle,
-              description:
-                editDescription,
-            }
-          );
-
-        }
-
-        setProducts((prev) => {
-          const updatedProducts = prev.map((product) =>
-            product.id === id
-              ? {
-                ...product,
-                title: editTitle,
-                description: editDescription,
-              }
-              : product
-          );
-
-          localStorage.setItem(
-            "products",
-            JSON.stringify(updatedProducts)
-          );
-
-          return updatedProducts;
-        });
-
+        setProducts((prev) =>
+          prev.map((product) =>
+            product._id === id ? response.data : product
+          )
+        );
         setEditingId(null);
-
-        toast.success(
-          "Product Updated"
-        );
-
+        toast.success("Product Updated");
       } catch (error) {
-
         console.log(error);
-
-        toast.log(
-          "Update Failed"
-        );
-
+        toast.error("Update Failed");
       }
     },
-    [
-      editTitle,
-      editDescription,
-      setProducts,
-    ]
+    [editTitle, editDescription, setProducts]
   );
+
 
   console.log("ListOfProducts Rendered");
   const filteredProducts =
@@ -453,7 +407,7 @@ export default function ListOfProducts({
             (product) => (
               <Grid
                 size={12}
-                key={product.id}
+                key={product._id}
                 sx={{
                   mb: 4,
                 }}
@@ -483,7 +437,7 @@ export default function ListOfProducts({
                   }}
                 >
                   {editingId ===
-                    product.id ? (
+                    product._id ? (
                     <CardContent
                       sx={{
                         p: 4,
@@ -566,7 +520,7 @@ export default function ListOfProducts({
                           }
                           onClick={() =>
                             updateProduct(
-                              product.id
+                              product._id
                             )
                           }
                         >
@@ -609,7 +563,7 @@ export default function ListOfProducts({
                           }}
                         >
                           {expandedId ===
-                            product.id
+                            product._id
                             ? product.description
                             : `${product.description.slice(
                               0,
@@ -635,14 +589,14 @@ export default function ListOfProducts({
                               onClick={() =>
                                 setExpandedId(
                                   expandedId ===
-                                    product.id
+                                    product._id
                                     ? null
-                                    : product.id
+                                    : product._id
                                 )
                               }
                             >
                               {expandedId ===
-                                product.id
+                                product._id
                                 ? "See Less"
                                 : "See More"}
                             </Button>
@@ -679,7 +633,7 @@ export default function ListOfProducts({
                             <DeleteIcon />
                           }
                           onClick={() =>
-                            handleDeleteClick(product.id)
+                            handleDeleteClick(product._id)
                           }
                         >
                           Delete

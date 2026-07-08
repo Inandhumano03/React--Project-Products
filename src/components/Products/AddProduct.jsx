@@ -102,15 +102,12 @@ export default function AddProduct({ setProducts }) {
     try {
       setLoading(true);
 
-      const response = await instance.post("/products/add", {
+      const response = await instance.post("/products", {
         title: state.title,
         description: state.description,
       });
       console.log('resp', response)
-      const newProduct = {
-        ...response.data,
-        id: localId(),
-      };
+      const newProduct = response.data;
 
       setProducts((prev) => {
         const updatedProducts = [newProduct, ...prev];
