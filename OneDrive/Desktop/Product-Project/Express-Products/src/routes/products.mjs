@@ -252,4 +252,5 @@ router.delete("/api/products/:id", async (req, res) => {
     });
   }
 });
+
 export default router;

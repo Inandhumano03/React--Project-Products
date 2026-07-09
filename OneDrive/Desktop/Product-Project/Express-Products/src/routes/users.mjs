@@ -4,13 +4,20 @@ import { createUserValidationSchema } from "../utils/validationSchema.js";
 import { validationResult, matchedData, checkSchema } from "express-validator";
 import cookieParser from "cookie-parser";
 import { users } from '../utils/constants.js'
-import {User} from '../mongoose/schema/user.mjs'
+import User from '../mongoose/schema/user.mjs'
 import { hashPassword } from "../utils/helper.mjs";
+import passport from "passport";
+import {
+    generateAccessToken,
+    generateRefreshToken
+} from "../utils/jwt.mjs";
+import { verifyJWT } from "../utils/auth.mjs";
+import jwt from "jsonwebtoken"
 const router = Router();
 
 
 //all users
-router.get("/api/users", (req, res) => {
+router.get("/api/users", verifyJWT, (req, res) => {
     res.send(users);
 
 });
@@ -57,35 +64,71 @@ router.get("/api/users/:id", (req, res) => {
 
 // post request
 
-router.post("/api/users",
-    checkSchema(createUserValidationSchema)
-    , async (req, res) => {
-        const result = validationResult(req);
-        console.log(result);
-        console.log(req['express-validator#contexts']);
-        //without u_name validation error should be shown in response and if console.log(req) not given
-        if (!result.isEmpty()) {
-            return res.status(400).send({ errors: result.array() });
-        }
-        const body = matchedData(req);
-        body.password=hashPassword(body.password);
-        const newUser = new User(body);
-        try {
-            const savedUser = await newUser.save();
+// router.post("/api/users",
+//     checkSchema(createUserValidationSchema)
+//     , async (req, res) => {
+//         const result = validationResult(req);
+//         console.log(result);
+//         console.log(req['express-validator#contexts']);
+//         //without u_name validation error should be shown in response and if console.log(req) not given
+//         if (!result.isEmpty()) {
+//             return res.status(400).send({ errors: result.array() });
+//         }
+//         const body = matchedData(req);
+//         body.password = hashPassword(body.password);
+//         const newUser = new User(body);
+//         try {
+//             const savedUser = await newUser.save();
 
-            return res.status(201).send(newUser);
-        }
-        catch(err){
-            console.log(err);
-            return res.status(400).send({msg:"User not Saved"});
-        }
+//             return res.status(201).send(newUser);
+//         }
+//         catch (err) {
+//             console.error("Save Error:", err);
 
-        // const newUser = { id: users[users.length - 1].id + 1, ...matchedData(req) };
-        // // users.push(newUser);//replaced by mongodb code
+//             return res.status(400).json({
+//                 msg: "User not Saved",
+//                 error: err.message,
+//                 name: err.name
+//             });
+//         }
+
+//         // const newUser = { id: users[users.length - 1].id + 1, ...matchedData(req) };
+//         // // users.push(newUser);//replaced by mongodb code
 
 
-    });
+//     });
+router.post(
+  "/api/users",
+  checkSchema(createUserValidationSchema),
+  async (req, res) => {
+    const result = validationResult(req);
 
+    if (!result.isEmpty()) {
+      return res.status(400).json({
+        errors: result.array(),
+      });
+    }
+
+    const body = matchedData(req);
+
+    body.password = hashPassword(body.password);
+
+    try {
+      const newUser = new User(body);
+
+      const savedUser = await newUser.save();
+
+      return res.status(201).json(savedUser);
+    } catch (err) {
+      console.error(err);
+
+      return res.status(400).json({
+        msg: "User not saved",
+        error: err.message,
+      });
+    }
+  }
+);
 
 
 //put request
@@ -120,4 +163,106 @@ router.delete("/api/users/:id", getUserIndexById, (req, res) => {
     users.splice(userIndex, 1);
     return res.status(200).send({ msg: "User deleted successfully" });
 })
+
+
+router.post("/api/login", (req, res, next) => {
+
+    passport.authenticate("local", (err, user, info) => {
+
+        if (err)
+            return next(err);
+
+        if (!user)
+            return res.status(401).json({
+                msg: info?.msg || "Login failed"
+            });
+
+        const accessToken = generateAccessToken(user);
+
+        const refreshToken = generateRefreshToken(user);
+
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: false,
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
+
+       return  res.json({
+
+            msg: "Login Successful",
+
+            accessToken,
+            refreshToken,
+
+            user: {
+
+                id: user._id,
+
+                user_name: user.user_name,
+
+                role: user.role
+            }
+
+        });
+        console.log(accessToken);
+
+    })(req, res, next);
+
+});
+
+router.post("/api/login", (req, res) => {
+
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken)
+
+        return res.status(401).json({
+            msg: "No Refresh Token"
+        });
+
+    jwt.verify(
+
+        refreshToken,
+
+        process.env.JWT_REFRESH_SECRET,
+
+        (err, decoded) => {
+
+            if (err)
+
+                return res.status(403).json({
+                    msg: "Invalid Refresh Token"
+                });
+
+            const accessToken = jwt.sign(
+
+                {
+
+                    id: decoded.id
+
+                },
+
+                process.env.JWT_SECRET,
+
+                {
+
+                    expiresIn: ACCESS_TOKEN_EXPIRES
+
+                }
+
+            );
+            console.log(res.accessToken);
+            res.json({
+
+                accessToken
+
+            });
+
+        }
+
+    );
+
+});
+
 export default router;
