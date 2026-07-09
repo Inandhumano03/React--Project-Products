@@ -60,7 +60,7 @@ const Navbar = () => {
         >
           <Button
             component={NavLink}
-            to="/"
+            to="/ProductList"
             color="inherit"
             startIcon={<Inventory2Icon />}
             sx={{
@@ -101,6 +101,26 @@ const Navbar = () => {
             }}
           >
             Excel Upload
+          </Button>
+          <Button
+            component={NavLink}
+            to="/"
+            color="inherit"
+            sx={{
+              "&.active": {
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                bgcolor: darkMode ? "#1e293b" : "#1976d2",
+                color: darkMode ? "#fff" : "#000",
+                px: 2,
+                py: 1,
+                borderRadius: 3,
+                boxShadow: 3,
+              },
+            }}
+          >
+            Logout
           </Button>
         </Box>
 

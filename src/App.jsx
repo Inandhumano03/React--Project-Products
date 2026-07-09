@@ -5,7 +5,9 @@ import AddProduct from "./components/Products/AddProduct";
 import { instance } from "./components/axios"
 import Navbar from "./components/Navbar";
 import ExcelApi from "./components/Products/ExcelApi";
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import UserLogin from './components/Products/UserLogin';
+import UserRegister from './components/Products/UserRegister';
+import { BrowserRouter, Routes, Route,useLocation } from 'react-router-dom';
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
@@ -13,6 +15,74 @@ import {
 } from "./components/context/ThemeContext";
 import ThemeToggle from
   "./components/hooks/ThemeToggle";
+
+
+  function AppContent() {
+  const { darkMode } = useContext(ThemeContext);
+
+  const [products, setProducts] = useState([]);
+
+  const location = useLocation();
+
+  // Pages where Navbar should be hidden
+  const hideNavbar = location.pathname === "/"|| location.pathname === "/register";
+
+  return (
+    <div
+      className={
+        darkMode
+          ? "bg-gray-800 text-white min-h-screen"
+          : "bg-blue-500 text-white min-h-screen"
+      }
+    >
+      <ToastContainer
+        position="top-right"
+        autoClose={2000}
+        theme="colored"
+      />
+
+      {!hideNavbar && <Navbar />}
+
+      <Routes>
+        <Route
+          path="/ProductList"
+          element={
+            <ListOfProducts
+              products={products}
+              setProducts={setProducts}
+            />
+          }
+        />
+
+        <Route
+          path="/add-product"
+          element={
+            <AddProduct
+              products={products}
+              setProducts={setProducts}
+            />
+          }
+        />
+
+        <Route
+          path="/excel-api"
+          element={<ExcelApi />}
+        />
+
+        <Route
+          path="/"
+          element={<UserLogin />}
+        />
+         <Route
+          path="/register"
+          element={<UserRegister />}
+        />
+      </Routes>
+      
+    </div>
+  );
+}
+
 function App() {
   const {
     darkMode
@@ -39,50 +109,11 @@ function App() {
   // }},[]);
 
   return (
-    <BrowserRouter className={
-      darkMode
-        ? "bg-gray-800 text-white"
-        : "bg-blue-500 text-white"
-    }>
-      <div>
-        <ToastContainer
-          position="top-right"
-          autoClose={2000}
-          theme="colored"
-        />
-
-        <Navbar />
-
-
-
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <ListOfProducts
-                products={products}
-                setProducts={setProducts}
-              />
-            }
-          />
-
-          <Route
-            path="/add-product"
-            element={
-              <AddProduct
-                products={products}
-                setProducts={setProducts}
-              />
-            }
-          />
-
-          <Route
-            path="/excel-api"
-            element={<ExcelApi />}
-          />
-        </Routes>
-      </div>
+    <BrowserRouter >
+    
+              <AppContent/>
     </BrowserRouter>
+    
   );
 }
 
