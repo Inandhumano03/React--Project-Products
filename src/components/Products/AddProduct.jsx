@@ -10,6 +10,8 @@ import { toast } from "react-toastify";
 import useDocumentTitle from "../hooks/UseDocumentTitle";
 import { ThemeContext } from "../context/ThemeContext";
 import ThemeToggle from "../hooks/ThemeToggle";
+import { storage } from "../appwrite/config";
+import { ID } from "appwrite";
 import {
   Container,
   Card,
@@ -30,11 +32,13 @@ export default function AddProduct({ setProducts }) {
   const [state, setState] = useState({
     title: "",
     description: "",
+    image: null,
   });
 
   const [errors, setErrors] = useState({
     title: "",
-    description: ""
+    description: "",
+    image: "",
   });
 
   useEffect(() => {
@@ -55,6 +59,9 @@ export default function AddProduct({ setProducts }) {
 
     if (!state.description.trim())
       temp.description = "Description is required";
+    if (!state.image)
+      temp.image = "Please select an image.";
+
     else if (state.description.length < 10)
       temp.description =
         "Minimum 10 characters";
@@ -74,7 +81,8 @@ export default function AddProduct({ setProducts }) {
 
   const isFormValid =
     state.title.trim().length >= 3 &&
-    state.description.trim().length >= 10;
+    state.description.trim().length >= 10 &&
+    state.image;
 
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
@@ -100,10 +108,24 @@ export default function AddProduct({ setProducts }) {
 
     try {
       setLoading(true);
+      const uploadResponse = await storage.createFile(
 
+        import.meta.env.VITE_APPWRITE_BUCKET_ID,
+
+        ID.unique(),
+
+        state.image
+
+      );
+      const imageId = uploadResponse.$id;
+      const imageUrl =
+        `${import.meta.env.VITE_APPWRITE_ENDPOINT}/storage/buckets/${import.meta.env.VITE_APPWRITE_BUCKET_ID
+        }/files/${imageId}/view?project=${import.meta.env.VITE_APPWRITE_PROJECT_ID
+        }`;
       const response = await instance.post("/products", {
         title: state.title,
         description: state.description,
+        image: imageUrl
       });
 
       const newProduct = response.data;
@@ -122,11 +144,13 @@ export default function AddProduct({ setProducts }) {
       setState({
         title: "",
         description: "",
+        image: null,
       });
 
       setErrors({
         title: "",
         description: "",
+        image: "",
       });
 
       toast.success("Product Added Successfully");
@@ -135,6 +159,7 @@ export default function AddProduct({ setProducts }) {
 
       console.error(error);
 
+      // Axios errors (Express backend)
       if (error.response) {
 
         switch (error.response.status) {
@@ -167,17 +192,22 @@ export default function AddProduct({ setProducts }) {
               error.response.data.message ||
               "Failed to add product."
             );
+
         }
 
-      } else if (error.request) {
+      }
 
-        toast.error(
-          "Server is not responding. Please try again."
-        );
+      // Axios network error
+      else if (error.request) {
 
-      } else {
+        toast.error("Server is not responding.");
 
-        toast.error("Something went wrong.");
+      }
+
+      // Appwrite or other JavaScript errors
+      else {
+
+        toast.error(error.message || "Upload failed.");
 
       }
 
@@ -187,7 +217,45 @@ export default function AddProduct({ setProducts }) {
 
     }
   }, [state, validateForm, setProducts]);
+  //handleImage upload
+  const handleImageChange = (event) => {
 
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+
+      toast.error("Please select an image file.");
+
+      setState(prev => ({
+        ...prev,
+        image: null
+      }));
+
+      return;
+
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+
+      toast.error("Image size should be less than 5 MB.");
+
+      setState(prev => ({
+        ...prev,
+        image: null
+      }));
+
+      return;
+
+    }
+
+    setState(prev => ({
+      ...prev,
+      image: file
+    }));
+
+  };
   return (
     <Box
       sx={{
@@ -231,6 +299,8 @@ export default function AddProduct({ setProducts }) {
           >
             Add Product
           </Typography>
+
+
 
           <Stack spacing={3}>
             <TextField
@@ -340,6 +410,25 @@ export default function AddProduct({ setProducts }) {
               </Typography>
             )}
             <Button
+              variant="outlined"
+              component="label"
+            >
+              Choose Product Image
+
+              <input
+                hidden
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+              />
+            </Button>
+            {state.image && (
+              <Typography>
+                Selected:
+                {state.image.name}
+              </Typography>
+            )}
+            <Button
               variant="contained"
               size="large"
               onClick={addProduct}
@@ -360,16 +449,19 @@ export default function AddProduct({ setProducts }) {
                 setState({
                   title: "",
                   description: "",
+                  image: null,
                 });
 
                 setErrors({
                   title: "",
                   description: "",
+                  image: null,
                 });
               }}
             >
               Reset
             </Button>
+
           </Stack>
         </Card>
       </Container>

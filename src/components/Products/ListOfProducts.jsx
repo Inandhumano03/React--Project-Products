@@ -1,10 +1,13 @@
 import {
+  Box,
+  Stack,
   Container,
   Typography,
   TextField,
   Card,
   CardContent,
   CardActions,
+  CardMedia,
   Button,
   Grid,
 } from "@mui/material";
@@ -22,203 +25,41 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
 import CancelIcon from "@mui/icons-material/Cancel";
 import useDocumentTitle from "../hooks/UseDocumentTitle";
-import React, { useState, useRef, useMemo, useCallback, useContext, useEffect } from "react";
-import { instance } from "../axios";
-import useDebounce from "../hooks/useDebounce";
-import ThemeToggle from "../hooks/ThemeToggle";
+import useProductManager from "../hooks/useProductManager";
+import { useContext } from "react";
 import { ThemeContext } from "../context/ThemeContext";
 export default function
   ListOfProducts({
     products,
     setProducts,
   }) {
+
+
   useDocumentTitle(
     "Product List"
   );
-  const role = localStorage.getItem("role");
+  const {
+    role,
+    search,
+    setSearch,
+    expandedId,
+    setExpandedId,
+    editingId,
+    editTitle,
+    editDescription,
+    setEditTitle,
+    setEditDescription,
+    filteredProducts,
+    openDialog,
+    handleDeleteClick,
+    handleCancelDelete,
+    handleConfirmDelete,
+    startEditing,
+    updateProduct
+  } = useProductManager(products, setProducts);
+
   const { darkMode } =
     useContext(ThemeContext);
-
-  const [search, setSearch] = useState("");
-
-  const [expandedId, setExpandedId] =
-    useState(null);
-  const deletedProductRef = useRef(null);
-  // waits 500ms after typing stops
-  const debouncedSearch =
-    useDebounce(search, 500);
-  const [editingId, setEditingId] = useState(null);
-  const [editTitle, setEditTitle] = useState("");
-  const [openDialog, setOpenDialog] = useState(false);
-  const [selectedId, setSelectedId] = useState(null);
-
-
-  const [editDescription, setEditDescription] =
-    useState("");
-
-  const handleDeleteClick = (id) => {
-    setSelectedId(id);
-    setOpenDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setSelectedId(null);
-  };
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await instance.get("/products");
-        console.log("fetched product", response)
-        setProducts(response.data);
-
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    fetchProducts();
-  }, []);
-
-
-  const handleConfirmDelete = (event) => {
-    if (event?.currentTarget) event.currentTarget.blur();
-    deleteProduct(selectedId);
-    handleCloseDialog();
-  };
-  const handleCancelDelete = () => {
-    setOpenDialog(false);
-    setSelectedId(null);
-  };
-  const deleteProduct = useCallback(
-    async (id) => {
-      const productToDelete = products.find(
-        (product) => product._id === id
-      );
-
-      if (!productToDelete) return;
-
-      // Remove immediately from UI
-      const updatedProducts = products.filter(
-        (product) => product._id !== id
-      );
-
-      setProducts(updatedProducts);
-
-      let undoClicked = false;
-
-      toast.warning(
-        ({ closeToast }) => (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              width: "100%",
-            }}
-          >
-            <span>Product Deleted</span>
-
-            <Button
-              variant="contained"
-              size="small"
-              color="secondary"
-              onClick={() => {
-                undoClicked = true;
-
-                setProducts((prev) => [
-                  productToDelete,
-                  ...prev,
-                ]);
-
-                closeToast();
-              }}
-            >
-              Undo
-            </Button>
-          </div>
-        ),
-        {
-          autoClose: 2000,
-
-          onClose: async () => {
-            if (!undoClicked) {
-              try {
-                await instance.delete(`/products/${id}`);
-
-                toast.success("Product deleted permanently");
-              } catch (error) {
-                console.log(error);
-
-                // Restore UI if backend delete failed
-                setProducts((prev) => [
-                  productToDelete,
-                  ...prev,
-                ]);
-
-                toast.error("Delete Failed");
-              }
-            }
-          },
-        }
-      );
-    },
-    [products, setProducts]
-  );
-
-  const startEditing = (product) => {
-    setEditingId(product._id);
-    setEditTitle(product.title);
-    setEditDescription(product.description);
-  };
-
-  const updateProduct = useCallback(
-    async (id) => {
-      try {
-        const response = await instance.put(
-          `/products/${id}`,
-          {
-            title: editTitle,
-            description: editDescription,
-          }
-        );
-
-        setProducts((prev) =>
-          prev.map((product) =>
-            product._id === id ? response.data : product
-          )
-        );
-        setEditingId(null);
-        toast.success("Product Updated");
-      } catch (error) {
-        console.log(error);
-        toast.error("Update Failed");
-      }
-    },
-    [editTitle, editDescription, setProducts]
-  );
-
-
-  console.log("ListOfProducts Rendered");
-  const filteredProducts =
-    useMemo(() => {
-
-      console.log(
-        "Filtering Products"
-      );
-
-      return products.filter(
-        (product) =>
-          product.title
-            ?.toLowerCase()
-            .includes(
-              debouncedSearch.toLowerCase()
-            )
-      );
-
-    }, [products, debouncedSearch]);
-
 
   return (
     <Container
@@ -436,6 +277,7 @@ export default function
                     },
                   }}
                 >
+
                   {editingId ===
                     product._id ? (
                     <CardContent
@@ -545,95 +387,116 @@ export default function
                     </CardContent>
                   ) : (
                     <>
-                      <CardContent>
-                        <Typography
-                          variant="h6"
-                          fontWeight="bold"
-                          gutterBottom
-                        >
-                          {product.title}
-                        </Typography>
-
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            color: darkMode
-                              ? "#cbd5e1"
-                              : "#64748b",
-                          }}
-                        >
-                          {expandedId ===
-                            product._id
-                            ? product.description
-                            : `${product.description.slice(
-                              0,
-                              120
-                            )}${product
-                              .description
-                              .length >
-                              120
-                              ? "..."
-                              : ""
-                            }`}
-                        </Typography>
-
-                        {product
-                          .description
-                          .length > 120 && (
-                            <Button
-                              size="small"
-                              sx={{
-                                mt: 1,
-                                p: 0,
-                              }}
-                              onClick={() =>
-                                setExpandedId(
-                                  expandedId ===
-                                    product._id
-                                    ? null
-                                    : product._id
-                                )
-                              }
-                            >
-                              {expandedId ===
-                                product._id
-                                ? "See Less"
-                                : "See More"}
-                            </Button>
-                          )}
-                      </CardContent>
-
-                      <CardActions
+                      <Box
                         sx={{
-                          px: 2,
-                          pb: 2,
-                          justifyContent: "flex-end",
-                          gap: 1,
+                          display: "flex",
+                          p: 2,
+                          gap: 2,
+                          alignItems: "flex-start",
                         }}
                       >
-                        {role === "admin" && (
-                          <>
-                            <Button
-                              variant="contained"
-                              startIcon={<EditIcon />}
-                              onClick={() => startEditing(product)}
-                            >
-                              Edit
-                            </Button>
-
-                            <Button
-                              variant="contained"
-                              color="error"
-                              startIcon={<DeleteIcon />}
-                              onClick={() =>
-                                handleDeleteClick(product._id)
-                              }
-                            >
-                              Delete
-                            </Button>
-                          </>
+                        {/* Left Image */}
+                        {product.image && (
+                          <CardMedia
+                            component="img"
+                            image={product.image}
+                            alt={product.title}
+                            sx={{
+                              width: 110,
+                              height: 110,
+                              borderRadius: 2,
+                              objectFit: "cover",
+                              flexShrink: 0,
+                            }}
+                          />
                         )}
-                      </CardActions>
+
+                        {/* Right Side */}
+                        <Box
+                          sx={{
+                            flex: 1,
+                          }}
+                        >
+                          <Typography
+                            variant="h6"
+                            fontWeight="bold"
+                          >
+                            {product.title}
+                          </Typography>
+
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: darkMode
+                                ? "#cbd5e1"
+                                : "#64748b",
+                              mt: 1,
+                            }}
+                          >
+                            {expandedId === product._id
+                              ? product.description
+                              : `${product.description.slice(0, 120)}${product.description.length > 120
+                                ? "..."
+                                : ""
+                              }`}
+                          </Typography>
+
+                          {product.description.length >
+                            120 && (
+                              <Button
+                                size="small"
+                                sx={{
+                                  mt: 1,
+                                  p: 0,
+                                }}
+                                onClick={() =>
+                                  setExpandedId(
+                                    expandedId ===
+                                      product._id
+                                      ? null
+                                      : product._id
+                                  )
+                                }
+                              >
+                                {expandedId ===
+                                  product._id
+                                  ? "See Less"
+                                  : "See More"}
+                              </Button>
+                            )}
+
+                          {role === "admin" && (
+                            <Stack
+                              direction="row"
+                              spacing={2}
+                              sx={{ mt: 2 }}
+                            >
+                              <Button
+                                variant="contained"
+                                startIcon={<EditIcon />}
+                                onClick={() =>
+                                  startEditing(product)
+                                }
+                              >
+                                Edit
+                              </Button>
+
+                              <Button
+                                variant="contained"
+                                color="error"
+                                startIcon={<DeleteIcon />}
+                                onClick={() =>
+                                  handleDeleteClick(
+                                    product._id
+                                  )
+                                }
+                              >
+                                Delete
+                              </Button>
+                            </Stack>
+                          )}
+                        </Box>
+                      </Box>
                     </>
                   )}
                 </Card>

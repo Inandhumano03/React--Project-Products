@@ -129,6 +129,7 @@ const navigate = useNavigate();
           <Button
             component={NavLink}
             onClick={handleLogout}
+            nativeButton={false}
             color="inherit"
             sx={{
               "&.active": {

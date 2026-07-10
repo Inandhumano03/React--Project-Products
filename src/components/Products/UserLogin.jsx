@@ -207,6 +207,7 @@ const UserLogin = () => {
                 margin="normal"
                 label="Username"
                 name="user_name"
+                autoComplete="username"
                 value={formData.user_name}
                 onChange={handleChange}
                 error={Boolean(errors.user_name)}
@@ -218,6 +219,7 @@ const UserLogin = () => {
                 margin="normal"
                 label="Password"
                 name="password"
+                 autoComplete="current-password"
                 type={showPassword ? "text" : "password"}
                 value={formData.password}
                 onChange={handleChange}
