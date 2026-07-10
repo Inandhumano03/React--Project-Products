@@ -1,7 +1,7 @@
 import { Router } from "express"
 import { getProductIndexById, getUserIndexById } from "../utils/middlewares.mjs";
 import Product from "../mongoose/schema/Product.mjs";
-import { checkSchema,validationResult,matchedData } from "express-validator";
+import { checkSchema, validationResult, matchedData } from "express-validator";
 import { createProductValidationSchema } from "../utils/validationSchema.js";
 import { verifyJWT } from "../utils/auth.mjs";
 import { authorizeRole } from "../utils/authrole.mjs";
@@ -83,7 +83,7 @@ const router = Router();
 // //delete user
 // router.delete("/api/products/:id",getProductIndexById,(req,res)=>{
 //      const prodIndex=req.prodIndex;
-   
+
 //     products.splice(prodIndex, 1);
 //    return res.status(200).send({msg:"Product deleted successfully"});
 // })
@@ -172,7 +172,10 @@ router.post(
       const newProduct = await Product.create({
         title: data.title,
         description: data.description,
+        image: req.body.image,
       });
+      const io = req.app.get("io");
+      io.emit("productAdded", newProduct);
 
       res.status(201).json(newProduct);
     } catch (err) {
@@ -201,6 +204,9 @@ router.put(
           runValidators: true,
         }
       );
+      const io = req.app.get("io");
+
+      io.emit("productUpdated", updatedProduct);
 
       if (!updatedProduct) {
         return res.status(404).json({
@@ -252,6 +258,9 @@ router.delete(
       const deletedProduct = await Product.findByIdAndDelete(
         req.params.id
       );
+      const io = req.app.get("io");
+
+      io.emit("productDeleted", id);
 
       if (!deletedProduct) {
         return res.status(404).json({

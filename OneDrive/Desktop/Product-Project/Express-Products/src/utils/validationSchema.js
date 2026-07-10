@@ -79,4 +79,10 @@ export const createProductValidationSchema = {
       errorMessage: "Description must contain at least 5 characters",
     },
   },
+  
+  image: {
+  notEmpty: {
+    errorMessage: "Image URL is required",
+  },
+}
 };

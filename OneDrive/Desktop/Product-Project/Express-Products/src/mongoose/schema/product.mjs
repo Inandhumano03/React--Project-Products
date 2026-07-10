@@ -16,7 +16,13 @@ const productSchema = new mongoose.Schema(
         trim: true,
         minlength: 10,
         maxlength: 200
+    },
+
+    image: {
+        type: String,
+        required: true
     }
+
 },
 {
     timestamps: true
