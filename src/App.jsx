@@ -1,5 +1,6 @@
 import { useEffect, useState, useContext } from "react";
 import "./App.css";
+import { Typography } from "@mui/material";
 import ListOfProducts from "./components/Products/ListOfProducts";
 import AddProduct from "./components/Products/AddProduct";
 import { instance } from "./components/axios"
@@ -7,8 +8,9 @@ import Navbar from "./components/Navbar";
 import ExcelApi from "./components/Products/ExcelApi";
 import UserLogin from './components/Products/UserLogin';
 import UserRegister from './components/Products/UserRegister';
-import { BrowserRouter, Routes, Route,useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
   ThemeContext
@@ -17,7 +19,8 @@ import ThemeToggle from
   "./components/hooks/ThemeToggle";
 
 
-  function AppContent() {
+function AppContent() {
+  const role = localStorage.getItem("role");
   const { darkMode } = useContext(ThemeContext);
 
   const [products, setProducts] = useState([]);
@@ -25,7 +28,7 @@ import ThemeToggle from
   const location = useLocation();
 
   // Pages where Navbar should be hidden
-  const hideNavbar = location.pathname === "/"|| location.pathname === "/register";
+  const hideNavbar = location.pathname === "/" || location.pathname === "/register";
 
   return (
     <div
@@ -57,10 +60,19 @@ import ThemeToggle from
         <Route
           path="/add-product"
           element={
-            <AddProduct
-              products={products}
-              setProducts={setProducts}
-            />
+            role === "admin" ? (
+              <AddProduct
+                products={products}
+                setProducts={setProducts}
+              />
+            ) : (
+              <Typography
+                variant="h5"
+                sx={{ mt: 5, textAlign: "center" }}
+              >
+                Access Denied
+              </Typography>
+            )
           }
         />
 
@@ -73,12 +85,12 @@ import ThemeToggle from
           path="/"
           element={<UserLogin />}
         />
-         <Route
+        <Route
           path="/register"
           element={<UserRegister />}
         />
       </Routes>
-      
+
     </div>
   );
 }
@@ -110,10 +122,10 @@ function App() {
 
   return (
     <BrowserRouter >
-    
-              <AppContent/>
+
+      <AppContent />
     </BrowserRouter>
-    
+
   );
 }
 

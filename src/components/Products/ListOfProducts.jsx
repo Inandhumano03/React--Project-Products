@@ -35,6 +35,7 @@ export default function
   useDocumentTitle(
     "Product List"
   );
+  const role = localStorage.getItem("role");
   const { darkMode } =
     useContext(ThemeContext);
 
@@ -606,37 +607,32 @@ export default function
                         sx={{
                           px: 2,
                           pb: 2,
-                          justifyContent:
-                            "flex-end",
+                          justifyContent: "flex-end",
                           gap: 1,
                         }}
                       >
-                        <Button
-                          variant="contained"
-                          startIcon={
-                            <EditIcon />
-                          }
-                          onClick={() =>
-                            startEditing(
-                              product
-                            )
-                          }
-                        >
-                          Edit
-                        </Button>
+                        {role === "admin" && (
+                          <>
+                            <Button
+                              variant="contained"
+                              startIcon={<EditIcon />}
+                              onClick={() => startEditing(product)}
+                            >
+                              Edit
+                            </Button>
 
-                        <Button
-                          variant="contained"
-                          color="error"
-                          startIcon={
-                            <DeleteIcon />
-                          }
-                          onClick={() =>
-                            handleDeleteClick(product._id)
-                          }
-                        >
-                          Delete
-                        </Button>
+                            <Button
+                              variant="contained"
+                              color="error"
+                              startIcon={<DeleteIcon />}
+                              onClick={() =>
+                                handleDeleteClick(product._id)
+                              }
+                            >
+                              Delete
+                            </Button>
+                          </>
+                        )}
                       </CardActions>
                     </>
                   )}

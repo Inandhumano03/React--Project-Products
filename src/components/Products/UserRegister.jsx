@@ -129,12 +129,7 @@ const UserRegister = () => {
             );
         }
     };
-    const [reset, formReset] = useState({
-        user_name: "",
-        password: "",
-        email: "",
-        role: "user",
-    });
+  
     return (
         <Box
             sx={{

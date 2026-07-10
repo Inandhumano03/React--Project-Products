@@ -105,7 +105,7 @@ export default function AddProduct({ setProducts }) {
         title: state.title,
         description: state.description,
       });
-      console.log('resp', response)
+
       const newProduct = response.data;
 
       setProducts((prev) => {
@@ -118,17 +118,73 @@ export default function AddProduct({ setProducts }) {
 
         return updatedProducts;
       });
+
       setState({
         title: "",
         description: "",
       });
 
+      setErrors({
+        title: "",
+        description: "",
+      });
+
       toast.success("Product Added Successfully");
+
     } catch (error) {
-      console.log(error);
-      toast.error("Failed To Add Product");
+
+      console.error(error);
+
+      if (error.response) {
+
+        switch (error.response.status) {
+
+          case 400:
+            toast.error(
+              error.response.data.errors?.[0]?.msg ||
+              "Invalid Product Details"
+            );
+            break;
+
+          case 401:
+            toast.error("Please login first.");
+            break;
+
+          case 403:
+            toast.error("Only Admin can add products.");
+            break;
+
+          case 404:
+            toast.error("API endpoint not found.");
+            break;
+
+          case 500:
+            toast.error("Internal Server Error.");
+            break;
+
+          default:
+            toast.error(
+              error.response.data.message ||
+              "Failed to add product."
+            );
+        }
+
+      } else if (error.request) {
+
+        toast.error(
+          "Server is not responding. Please try again."
+        );
+
+      } else {
+
+        toast.error("Something went wrong.");
+
+      }
+
     } finally {
+
       setLoading(false);
+
     }
   }, [state, validateForm, setProducts]);
 

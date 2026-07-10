@@ -97,6 +97,15 @@ const UserLogin = () => {
         "accessToken",
         response.data.accessToken
       );
+      localStorage.setItem(
+        "refreshToken",
+        response.data.refreshToken
+      );
+
+      localStorage.setItem(
+        "role",
+        response.data.user.role
+      );
 
       toast.success("Login Successful");
 
@@ -136,6 +145,8 @@ const UserLogin = () => {
 
     }
   };
+
+  
   return (
     <Box
       sx={{

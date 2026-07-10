@@ -16,9 +16,32 @@ import UploadFileIcon from "@mui/icons-material/UploadFile";
 
 import ThemeToggle from "./hooks/ThemeToggle";
 import { ThemeContext } from "./context/ThemeContext";
-const Navbar = () => {
-  const { darkMode } = useContext(ThemeContext);
+import { instance } from "../components/axios/index";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
+
+const Navbar = () => {
+
+const navigate = useNavigate();
+  const role = localStorage.getItem("role")?.toLowerCase();
+  const { darkMode } = useContext(ThemeContext);
+  const handleLogout = async () => {
+    try {
+        await instance.post("/logout");
+
+        // Remove access token from localStorage/sessionStorage
+        localStorage.removeItem("accessToken");
+
+        toast.success("Logged out successfully");
+
+        navigate("/");
+
+    } catch (err) {
+        console.error(err);
+        toast.error("Logout failed");
+    }
+};
   return (
     <AppBar
       position="sticky"
@@ -72,21 +95,22 @@ const Navbar = () => {
           >
             Products
           </Button>
-
-          <Button
-            component={NavLink}
-            to="/add-product"
-            color="inherit"
-            startIcon={<AddCircleIcon />}
-            sx={{
-              "&.active": {
-                bgcolor: "rgba(255,255,255,0.18)",
-                borderRadius: 2,
-              },
-            }}
-          >
-            Add Product
-          </Button>
+          {role === "admin" && (
+            <Button
+              component={NavLink}
+              to="/add-product"
+              color="inherit"
+              startIcon={<AddCircleIcon />}
+              sx={{
+                "&.active": {
+                  bgcolor: "rgba(255,255,255,0.18)",
+                  borderRadius: 2,
+                },
+              }}
+            >
+              Add Product
+            </Button>
+          )}
 
           <Button
             component={NavLink}
@@ -104,7 +128,7 @@ const Navbar = () => {
           </Button>
           <Button
             component={NavLink}
-            to="/"
+            onClick={handleLogout}
             color="inherit"
             sx={{
               "&.active": {
