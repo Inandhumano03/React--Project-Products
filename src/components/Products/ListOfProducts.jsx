@@ -28,6 +28,8 @@ import useDocumentTitle from "../hooks/UseDocumentTitle";
 import useProductManager from "../hooks/useProductManager";
 import { useContext } from "react";
 import { ThemeContext } from "../context/ThemeContext";
+import  ProductEditForm from "../../components/Products/ProductEditForm"
+import  ProductCard  from "../../components/Products/ProductCard"
 export default function
   ListOfProducts({
     products,
@@ -46,6 +48,7 @@ export default function
     setExpandedId,
     editingId,
     editTitle,
+    setEditingId,
     editDescription,
     setEditTitle,
     setEditDescription,
@@ -278,227 +281,29 @@ export default function
                   }}
                 >
 
-                  {editingId ===
-                    product._id ? (
-                    <CardContent
-                      sx={{
-                        p: 4,
-                      }}
-                    >
-                      <TextField
-                        fullWidth
-                        label="Title"
-                        value={editTitle}
-                        onChange={(e) =>
-                          setEditTitle(e.target.value)
-                        }
-                        sx={{
-                          mb: 2,
-                          gap: 2,
-                          "& .MuiInputLabel-root": {
-                            color: darkMode ? "#cbd5e1" : "#64748b",
-                          },
-
-                          "& .MuiOutlinedInput-root": {
-                            color: darkMode ? "#ffffff" : "#000000",
-
-                            "& fieldset": {
-                              borderColor: darkMode ? "#475569" : "#cbd5e1",
-                            },
-
-                            "&:hover fieldset": {
-                              borderColor: darkMode ? "#94a3b8" : "#64748b",
-                            },
-                          },
-
-                        }}
-                      />
-                      <TextField
-                        fullWidth
-                        multiline
-                        rows={4}
-                        label="Description"
-                        value={editDescription}
-                        onChange={(e) =>
-                          setEditDescription(e.target.value)
-                        }
-                        sx={{
-                          "& .MuiInputLabel-root": {
-                            color: darkMode ? "#cbd5e1" : "#64748b",
-                          },
-
-                          "& .MuiOutlinedInput-root": {
-                            color: darkMode ? "#ffffff" : "#000000",
-
-                            "& fieldset": {
-                              borderColor: darkMode ? "#475569" : "#cbd5e1",
-                            },
-
-                            "&:hover fieldset": {
-                              borderColor: darkMode ? "#94a3b8" : "#64748b",
-                            },
-                          },
-                        }}
-                      />
-
-                      <CardActions
-                        sx={{
-                          justifyContent: "flex-end",
-
-                          gap: 2,
-
-                          px: 4,
-
-                          pb: 3,
-
-                          pt: 1,
-                        }}
-                      >
-                        <Button
-                          variant="contained"
-                          color="success"
-                          startIcon={
-                            <SaveIcon />
-                          }
-                          onClick={() =>
-                            updateProduct(
-                              product._id
-                            )
-                          }
-                        >
-                          Save
-                        </Button>
-
-                        <Button
-                          variant="outlined"
-                          color="error"
-                          startIcon={
-                            <CancelIcon />
-                          }
-                          onClick={() =>
-                            setEditingId(
-                              null
-                            )
-                          }
-                        >
-                          Cancel
-                        </Button>
-                      </CardActions>
-                    </CardContent>
+                 { editingId === product._id ? (
+                  <ProductEditForm
+                    product={product}
+                    darkMode={darkMode}
+                    editTitle={editTitle}
+                    setEditTitle={setEditTitle}
+                    editDescription={editDescription}
+                    setEditDescription={setEditDescription}
+                    updateProduct={updateProduct}
+                    setEditingId={setEditingId}
+                  />
                   ) : (
-                    <>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          p: 2,
-                          gap: 2,
-                          alignItems: "flex-start",
-                        }}
-                      >
-                        {/* Left Image */}
-                        {product.image && (
-                          <CardMedia
-                            component="img"
-                            image={product.image}
-                            alt={product.title}
-                            sx={{
-                              width: 110,
-                              height: 110,
-                              borderRadius: 2,
-                              objectFit: "cover",
-                              flexShrink: 0,
-                            }}
-                          />
-                        )}
-
-                        {/* Right Side */}
-                        <Box
-                          sx={{
-                            flex: 1,
-                          }}
-                        >
-                          <Typography
-                            variant="h6"
-                            fontWeight="bold"
-                          >
-                            {product.title}
-                          </Typography>
-
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              color: darkMode
-                                ? "#cbd5e1"
-                                : "#64748b",
-                              mt: 1,
-                            }}
-                          >
-                            {expandedId === product._id
-                              ? product.description
-                              : `${product.description.slice(0, 120)}${product.description.length > 120
-                                ? "..."
-                                : ""
-                              }`}
-                          </Typography>
-
-                          {product.description.length >
-                            120 && (
-                              <Button
-                                size="small"
-                                sx={{
-                                  mt: 1,
-                                  p: 0,
-                                }}
-                                onClick={() =>
-                                  setExpandedId(
-                                    expandedId ===
-                                      product._id
-                                      ? null
-                                      : product._id
-                                  )
-                                }
-                              >
-                                {expandedId ===
-                                  product._id
-                                  ? "See Less"
-                                  : "See More"}
-                              </Button>
-                            )}
-
-                          {role === "admin" && (
-                            <Stack
-                              direction="row"
-                              spacing={2}
-                              sx={{ mt: 2 }}
-                            >
-                              <Button
-                                variant="contained"
-                                startIcon={<EditIcon />}
-                                onClick={() =>
-                                  startEditing(product)
-                                }
-                              >
-                                Edit
-                              </Button>
-
-                              <Button
-                                variant="contained"
-                                color="error"
-                                startIcon={<DeleteIcon />}
-                                onClick={() =>
-                                  handleDeleteClick(
-                                    product._id
-                                  )
-                                }
-                              >
-                                Delete
-                              </Button>
-                            </Stack>
-                          )}
-                        </Box>
-                      </Box>
-                    </>
-                  )}
+                  <ProductCard
+                    product={product}
+                    darkMode={darkMode}
+                    expandedId={expandedId}
+                    setExpandedId={setExpandedId}
+                    role={role}
+                    startEditing={startEditing}
+                    handleDeleteClick={handleDeleteClick}
+                  />
+                  )
+                }
                 </Card>
               </Grid>
             )

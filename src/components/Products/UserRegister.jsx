@@ -24,7 +24,11 @@ import { ToastContainer } from "react-toastify";
 import { toast } from "react-toastify";
 import { instance } from "../axios/index";
 import { useNavigate } from "react-router-dom";
+import useDocumentTitle from "../hooks/UseDocumentTitle";
 const UserRegister = () => {
+    useDocumentTitle(
+        "Register"
+    );
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
 
@@ -122,14 +126,24 @@ const UserRegister = () => {
             setShowPassword(false);
             navigate("/");
         } catch (err) {
-            console.log(err);
+
+            console.log("Full Error:", err);
+
+            console.log("Response:", err.response);
+
+            console.log("Data:", err.response?.data);
+
+            console.log("Errors:", err.response?.data?.errors);
 
             toast.error(
-                err.response?.data?.msg || "Registration Failed"
+                err.response?.data?.errors?.[0]?.msg ||
+                err.response?.data?.msg ||
+                "Registration Failed"
             );
+
         }
     };
-  
+
     return (
         <Box
             sx={{

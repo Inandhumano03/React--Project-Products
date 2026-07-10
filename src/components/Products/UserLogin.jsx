@@ -22,8 +22,12 @@ import {
 
 import { useNavigate } from "react-router-dom";
 import { instance } from "../axios";
+import useDocumentTitle from "../hooks/UseDocumentTitle";
 
 const UserLogin = () => {
+  useDocumentTitle(
+    "Login"
+  );
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -146,7 +150,7 @@ const UserLogin = () => {
     }
   };
 
-  
+
   return (
     <Box
       sx={{
@@ -191,7 +195,7 @@ const UserLogin = () => {
                 variant="h4"
                 fontWeight="bold"
               >
-                Welcome Back
+                Welcome
               </Typography>
 
               <Typography
@@ -219,28 +223,25 @@ const UserLogin = () => {
                 margin="normal"
                 label="Password"
                 name="password"
-                 autoComplete="current-password"
+                autoComplete="current-password"
                 type={showPassword ? "text" : "password"}
                 value={formData.password}
                 onChange={handleChange}
                 error={Boolean(errors.password)}
                 helperText={errors.password}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() =>
-                          setShowPassword(!showPassword)
-                        }
-                      >
-                        {showPassword ? (
-                          <VisibilityOff />
-                        ) : (
-                          <Visibility />
-                        )}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          edge="end"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
                 }}
               />
 

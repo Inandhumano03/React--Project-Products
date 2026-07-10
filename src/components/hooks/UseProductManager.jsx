@@ -1,9 +1,30 @@
+import {
+  Box,
+  Stack,
+  Container,
+  Typography,
+  TextField,
+  Card,
+  CardContent,
+  CardActions,
+  CardMedia,
+  Button,
+  Grid,
+} from "@mui/material";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+} from "@mui/material";
 import React, { useState, useRef, useMemo, useCallback, useContext, useEffect } from "react";
 import { instance } from "../axios/index";
 import useDebounce from "../../components/hooks/useDebounce";
-import ThemeToggle from "./ThemeToggle";
+// import ThemeToggle from "./ThemeToggle";
 import { socket } from "../socket";
-
+import { toast } from "react-toastify";
+// import { ToastContainer } from "react-toastify";
 export default function useProductManager(products, setProducts) {
     const role = localStorage.getItem("role");
 
@@ -17,13 +38,13 @@ export default function useProductManager(products, setProducts) {
     const debouncedSearch =
         useDebounce(search, 500);
     const [editingId, setEditingId] = useState(null);
-    const [editTitle, setEditTitle] = useState("");
+    // const [editTitle, setEditTitle] = useState("");
     const [openDialog, setOpenDialog] = useState(false);
     const [selectedId, setSelectedId] = useState(null);
 
 
-    const [editDescription, setEditDescription] =
-        useState("");
+    // const [editDescription, setEditDescription] =
+    //     useState("");
 
     const handleDeleteClick = (id) => {
         setSelectedId(id);
@@ -67,7 +88,7 @@ export default function useProductManager(products, setProducts) {
 
             });
 
-            toast.success("New product added!");
+            toast.success(`${newProduct.title} added successfully`);
 
         });
 
@@ -95,6 +116,7 @@ export default function useProductManager(products, setProducts) {
                 )
 
             );
+            toast.info(`"${updatedProduct.title}" updated successfully!`);
 
         });
 
@@ -108,12 +130,17 @@ export default function useProductManager(products, setProducts) {
 
     useEffect(() => {
 
-        socket.on("productDeleted", (id) => {
+        socket.on("productDeleted", (deletedProduct) => {
 
             setProducts(prev =>
+                prev.filter(
+                    product =>
+                        product._id !== deletedProduct._id
+                )
+            );
 
-                prev.filter(product => product._id !== id)
-
+            toast.error(
+                `"${deletedProduct.title}" deleted successfully!`
             );
 
         });
@@ -214,44 +241,48 @@ export default function useProductManager(products, setProducts) {
 
     const startEditing = (product) => {
         setEditingId(product._id);
-        setEditTitle(product.title);
-        setEditDescription(product.description);
     };
 
     const updateProduct = useCallback(
-        async (id) => {
+        async (id, title, description) => {
+
             try {
+
                 const response = await instance.put(
                     `/products/${id}`,
                     {
-                        title: editTitle,
-                        description: editDescription,
+                        title,
+                        description,
                     }
                 );
 
-                setProducts((prev) =>
-                    prev.map((product) =>
-                        product._id === id ? response.data : product
+                setProducts(prev =>
+                    prev.map(product =>
+                        product._id === id
+                            ? response.data
+                            : product
                     )
                 );
+
                 setEditingId(null);
+
                 toast.success("Product Updated");
+
             } catch (error) {
+
                 console.log(error);
+
                 toast.error("Update Failed");
+
             }
+
         },
-        [editTitle, editDescription, setProducts]
+        [setProducts]
     );
 
     const filteredProducts =
-        useMemo(() => {
-
-            console.log(
-                "Filtering Products"
-            );
-
-            return products.filter(
+        useMemo(() => { 
+           return products.filter(
                 (product) =>
                     product.title
                         ?.toLowerCase()
@@ -272,12 +303,6 @@ export default function useProductManager(products, setProducts) {
         setExpandedId,
 
         editingId,
-
-        editTitle,
-        setEditTitle,
-
-        editDescription,
-        setEditDescription,
 
         filteredProducts,
 
