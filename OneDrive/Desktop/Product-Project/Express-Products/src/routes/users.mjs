@@ -187,7 +187,7 @@ router.post("/api/login", (req, res, next) => {
             sameSite: "strict",
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
-
+        console.log("Access Token:", accessToken);
        return  res.json({
 
             msg: "Login Successful",
@@ -234,7 +234,8 @@ router.post("/api/login", (req, res) => {
                 return res.status(403).json({
                     msg: "Invalid Refresh Token"
                 });
-
+                  console.log("Decoded:", decoded);
+            console.log("JWT_SECRET:", process.env.JWT_SECRET);
             const accessToken = jwt.sign(
 
                 {
@@ -252,7 +253,7 @@ router.post("/api/login", (req, res) => {
                 }
 
             );
-            console.log(res.accessToken);
+             console.log("Access Token:", accessToken)
             res.json({
 
                 accessToken
@@ -262,6 +263,15 @@ router.post("/api/login", (req, res) => {
         }
 
     );
+
+});
+router.post("/api/logout", (req, res) => {
+
+    res.clearCookie("refreshToken");
+
+    res.json({
+        msg: "Logged out successfully"
+    });
 
 });
 

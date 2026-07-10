@@ -3,6 +3,8 @@ import { getProductIndexById, getUserIndexById } from "../utils/middlewares.mjs"
 import Product from "../mongoose/schema/Product.mjs";
 import { checkSchema,validationResult,matchedData } from "express-validator";
 import { createProductValidationSchema } from "../utils/validationSchema.js";
+import { verifyJWT } from "../utils/auth.mjs";
+import { authorizeRole } from "../utils/authrole.mjs";
 const router = Router();
 
 
@@ -86,17 +88,21 @@ const router = Router();
 //    return res.status(200).send({msg:"Product deleted successfully"});
 // })
 //get all products
-router.get("/api/products", async (req, res) => {
-  try {
-    const products = await Product.find();
+router.get(
+  "/api/products",
+  verifyJWT,
+  async (req, res) => {
+    try {
+      const products = await Product.find();
 
-    res.status(200).json(products);
-  } catch (err) {
-    res.status(500).json({
-      message: err.message,
-    });
+      res.json(products);
+    } catch (err) {
+      res.status(500).json({
+        message: err.message,
+      });
+    }
   }
-});
+);
 
 
 //get products by id
@@ -148,6 +154,8 @@ router.get("/api/product", async (req, res) => {
 //post products
 router.post(
   "/api/products",
+  verifyJWT,
+  authorizeRole("admin"),
   checkSchema(createProductValidationSchema),
   async (req, res) => {
     const result = validationResult(req);
@@ -174,37 +182,40 @@ router.post(
     }
   }
 );
-
 //put products
 
-router.put("/api/products/:id", async (req, res) => {
-  try {
-    const updatedProduct = await Product.findByIdAndUpdate(
-      req.params.id,
-      {
-        title: req.body.title,
-        description: req.body.description,
-      },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
+router.put(
+  "/api/products/:id",
+  verifyJWT,
+  authorizeRole("admin"),
+  async (req, res) => {
+    try {
+      const updatedProduct = await Product.findByIdAndUpdate(
+        req.params.id,
+        {
+          title: req.body.title,
+          description: req.body.description,
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
 
-    if (!updatedProduct) {
-      return res.status(404).json({
-        message: "Product not found",
+      if (!updatedProduct) {
+        return res.status(404).json({
+          message: "Product not found",
+        });
+      }
+
+      res.json(updatedProduct);
+    } catch (err) {
+      res.status(500).json({
+        message: err.message,
       });
     }
-
-    res.json(updatedProduct);
-  } catch (err) {
-    res.status(500).json({
-      message: err.message,
-    });
   }
-});
-
+);
 //patch 
 router.patch("/api/products/:id", async (req, res) => {
   try {
@@ -232,25 +243,31 @@ router.patch("/api/products/:id", async (req, res) => {
 });
 
 //delete product
+router.delete(
+  "/api/products/:id",
+  verifyJWT,
+  authorizeRole("admin"),
+  async (req, res) => {
+    try {
+      const deletedProduct = await Product.findByIdAndDelete(
+        req.params.id
+      );
 
-router.delete("/api/products/:id", async (req, res) => {
-  try {
-    const deletedProduct = await Product.findByIdAndDelete(req.params.id);
+      if (!deletedProduct) {
+        return res.status(404).json({
+          message: "Product not found",
+        });
+      }
 
-    if (!deletedProduct) {
-      return res.status(404).json({
-        message: "Product not found",
+      res.json({
+        message: "Product deleted successfully",
+      });
+    } catch (err) {
+      res.status(500).json({
+        message: err.message,
       });
     }
-
-    res.json({
-      message: "Product deleted successfully",
-    });
-  } catch (err) {
-    res.status(500).json({
-      message: err.message,
-    });
   }
-});
+);
 
 export default router;
