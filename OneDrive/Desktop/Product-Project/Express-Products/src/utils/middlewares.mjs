@@ -1,4 +1,4 @@
-import {products, users} from '../utils/constants.js';
+
 
 //userIndexById middleware
 export const getUserIndexById=(req,res,next)=>{

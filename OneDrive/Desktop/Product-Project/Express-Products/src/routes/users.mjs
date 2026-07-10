@@ -3,7 +3,6 @@ import { getUserIndexById } from "../utils/middlewares.mjs";
 import { createUserValidationSchema } from "../utils/validationSchema.js";
 import { validationResult, matchedData, checkSchema } from "express-validator";
 import cookieParser from "cookie-parser";
-import { users } from '../utils/constants.js'
 import User from '../mongoose/schema/user.mjs'
 import { hashPassword } from "../utils/helper.mjs";
 import passport from "passport";

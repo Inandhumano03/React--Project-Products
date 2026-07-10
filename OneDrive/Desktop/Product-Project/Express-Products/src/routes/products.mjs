@@ -250,33 +250,39 @@ router.patch("/api/products/:id", async (req, res) => {
 
 //delete product
 router.delete(
-  "/api/products/:id",
-  verifyJWT,
-  authorizeRole("admin"),
-  async (req, res) => {
-    try {
-      const deletedProduct = await Product.findByIdAndDelete(
-        req.params.id
-      );
-      const io = req.app.get("io");
+    "/api/products/:id",
+    verifyJWT,
+    authorizeRole("admin"),
+    async (req, res) => {
 
-      io.emit("productDeleted", id);
+        try {
 
-      if (!deletedProduct) {
-        return res.status(404).json({
-          message: "Product not found",
-        });
-      }
+            const product = await Product.findByIdAndDelete(req.params.id);
 
-      res.json({
-        message: "Product deleted successfully",
-      });
-    } catch (err) {
-      res.status(500).json({
-        message: err.message,
-      });
+            if (!product) {
+
+                return res.status(404).json({
+                    message: "Product not found"
+                });
+
+            }
+
+            const io = req.app.get("io");
+
+            io.emit("productDeleted", product);
+
+            res.json(product);
+
+        } catch (err) {
+
+            console.error(err);
+
+            res.status(500).json({
+                message: err.message
+            });
+
+        }
+
     }
-  }
 );
-
 export default router;

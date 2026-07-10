@@ -5,10 +5,7 @@ import cookieParser from "cookie-parser";
 import session from "express-session";
 import { Strategy as LocalStrategy } from "passport-local";
 import passport from "passport";
-// import { users } from "./utils/constants.js";
 import User  from '../src/mongoose/schema/user.mjs'
-// import userRouter from './routes/users.mjs'
-// import productRouter from './routes/products.mjs'
 import routes from "./routes/router.mjs"
 import mongoose from "mongoose";
 import { comparePassword } from "./utils/helper.mjs";
