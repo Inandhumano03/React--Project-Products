@@ -4,15 +4,22 @@ import { createUserValidationSchema } from "../utils/validationSchema.js";
 import { validationResult, matchedData, checkSchema } from "express-validator";
 import cookieParser from "cookie-parser";
 import User from '../mongoose/schema/user.mjs'
-import { hashPassword } from "../utils/helper.mjs";
+import { hashPassword } from "../utils/bcrypt.mjs";
 import passport from "passport";
+
+import { OAuth2Client } from "google-auth-library";
+
 import {
     generateAccessToken,
     generateRefreshToken
 } from "../utils/jwt.mjs";
 import { verifyJWT } from "../utils/auth.mjs";
 import jwt from "jsonwebtoken"
+
+
 const router = Router();
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 
 //all users
@@ -40,7 +47,7 @@ router.get("/api/user", (req, res) => {
 
     }
     else {
-        return res.send({ msg: "You aere not admin" });
+        return res.send({ message: "You aere not admin" });
     }
 
 });
@@ -50,11 +57,11 @@ router.get("/api/user", (req, res) => {
 router.get("/api/users/:id", (req, res) => {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
-        res.status(404).send({ msg: "Invalid Request,No user ID found" });
+        res.status(404).send({ message: "Invalid Request,No user ID found" });
     }
     const user = users.find(user => user.id === id);
     if (!user) {
-        res.status(404).send({ msg: "No user found with given ID" });
+        res.status(404).send({ message: "No user found with given ID" });
     }
     else {
         res.send(user);
@@ -97,36 +104,36 @@ router.get("/api/users/:id", (req, res) => {
 
 //     });
 router.post(
-  "/api/users",
-  checkSchema(createUserValidationSchema),
-  async (req, res) => {
-    const result = validationResult(req);
+    "/api/users",
+    checkSchema(createUserValidationSchema),
+    async (req, res) => {
+        const result = validationResult(req);
 
-    if (!result.isEmpty()) {
-      return res.status(400).json({
-        errors: result.array(),
-      });
+        if (!result.isEmpty()) {
+            return res.status(400).json({
+                errors: result.array(),
+            });
+        }
+
+        const body = matchedData(req);
+
+        body.password = hashPassword(body.password);
+
+        try {
+            const newUser = new User(body);
+
+            const savedUser = await newUser.save();
+
+            return res.status(201).json(savedUser);
+        } catch (err) {
+            console.error(err);
+
+            return res.status(400).json({
+                message: "User not saved",
+                error: err.message,
+            });
+        }
     }
-
-    const body = matchedData(req);
-
-    body.password = hashPassword(body.password);
-
-    try {
-      const newUser = new User(body);
-
-      const savedUser = await newUser.save();
-
-      return res.status(201).json(savedUser);
-    } catch (err) {
-      console.error(err);
-
-      return res.status(400).json({
-        msg: "User not saved",
-        error: err.message,
-      });
-    }
-  }
 );
 
 
@@ -143,7 +150,7 @@ router.put("/api/users/:id", getUserIndexById, (req, res) => {
     const id = parseInt(req.params.id);
     const userIndex = req.userIndex;
     users[userIndex] = { id: id, ...req.body };
-    return res.status(200).send({ msg: "User updated successfully" });
+    return res.status(200).send({ message: "User updated successfully" });
 })
 
 
@@ -151,7 +158,7 @@ router.put("/api/users/:id", getUserIndexById, (req, res) => {
 router.patch("/api/users/:id", getUserIndexById, (req, res) => {
     const userIndex = req.userIndex;
     users[userIndex] = { ...users[userIndex], ...req.body };
-    return res.status(200).send({ msg: "User updated successfully" });
+    return res.status(200).send({ message: "User updated successfully" });
 })
 
 
@@ -160,7 +167,7 @@ router.delete("/api/users/:id", getUserIndexById, (req, res) => {
     const userIndex = req.userIndex;
 
     users.splice(userIndex, 1);
-    return res.status(200).send({ msg: "User deleted successfully" });
+    return res.status(200).send({ message: "User deleted successfully" });
 })
 
 
@@ -171,11 +178,11 @@ router.post("/api/login", (req, res, next) => {
         if (err)
             return next(err);
 
-        if (!user)
+        if (!user) {
             return res.status(401).json({
-                msg: info?.msg || "Login failed"
+                message: info.message
             });
-
+        }
         const accessToken = generateAccessToken(user);
 
         const refreshToken = generateRefreshToken(user);
@@ -186,10 +193,9 @@ router.post("/api/login", (req, res, next) => {
             sameSite: "strict",
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
-        console.log("Access Token:", accessToken);
-       return  res.json({
+        return res.json({
 
-            msg: "Login Successful",
+            message: "Login Successful",
 
             accessToken,
             refreshToken,
@@ -210,14 +216,14 @@ router.post("/api/login", (req, res, next) => {
 
 });
 
-router.post("/api/login", (req, res) => {
+router.post("/refresh", (req, res) => {
 
     const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken)
 
         return res.status(401).json({
-            msg: "No Refresh Token"
+            message: "No Refresh Token"
         });
 
     jwt.verify(
@@ -231,10 +237,8 @@ router.post("/api/login", (req, res) => {
             if (err)
 
                 return res.status(403).json({
-                    msg: "Invalid Refresh Token"
+                    message: "Invalid Refresh Token"
                 });
-                  console.log("Decoded:", decoded);
-            console.log("JWT_SECRET:", process.env.JWT_SECRET);
             const accessToken = jwt.sign(
 
                 {
@@ -252,7 +256,6 @@ router.post("/api/login", (req, res) => {
                 }
 
             );
-             console.log("Access Token:", accessToken)
             res.json({
 
                 accessToken
@@ -264,14 +267,170 @@ router.post("/api/login", (req, res) => {
     );
 
 });
+
+router.post("/api/google-login", async (req, res) => {
+
+    try {
+
+        const { credential } = req.body;
+
+        if (!credential) {
+
+            return res.status(400).json({
+
+                message: "Google credential is missing"
+
+            });
+
+        }
+
+        // Verify Google's ID token
+        const ticket = await client.verifyIdToken({
+
+            idToken: credential,
+
+            audience: process.env.GOOGLE_CLIENT_ID
+
+        });
+
+        const payload = ticket.getPayload();
+
+        // Payload contains Google's user information
+        // email
+        // name
+        // picture
+
+        let user = await User.findOne({
+
+            email: payload.email
+
+        });
+
+        // Create user if first Google login
+        if (!user) {
+
+            user = await User.create({
+
+                user_name: payload.name,
+
+                email: payload.email,
+
+                password: null,
+
+                role: "user",
+
+                authProvider: "google"
+
+            });
+
+        }
+
+        // Generate Access Token
+        const accessToken = jwt.sign(
+
+            {
+
+                id: user._id,
+
+                role: user.role
+
+            },
+
+            process.env.JWT_SECRET,
+
+            {
+
+                expiresIn: "15m"
+
+            }
+
+        );
+
+        // Generate Refresh Token
+        const refreshToken = jwt.sign(
+
+            {
+
+                id: user._id
+
+            },
+
+            process.env.JWT_REFRESH_SECRET,
+
+            {
+
+                expiresIn: "7d"
+
+            }
+
+        );
+
+        // Store Refresh Token in Cookie
+        res.cookie(
+
+            "refreshToken",
+
+            refreshToken,
+
+            {
+
+                httpOnly: true,
+
+                secure: false,
+
+                sameSite: "lax"
+
+            }
+
+        );
+
+        res.json({
+
+            message: "Google Login Successful",
+
+            accessToken,
+
+            refreshToken,
+
+            user: {
+
+                id: user._id,
+
+                user_name: user.user_name,
+
+                email: user.email,
+
+                role: user.role
+
+            }
+
+        });
+
+    }
+
+    catch (err) {
+
+        console.log(err);
+
+        res.status(500).json({
+
+            message: "Google Login Failed"
+
+        });
+
+    }
+
+});
 router.post("/api/logout", (req, res) => {
 
     res.clearCookie("refreshToken");
 
     res.json({
-        msg: "Logged out successfully"
+        message: "Logged out successfully"
     });
 
 });
+
+
 
 export default router;

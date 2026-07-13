@@ -87,6 +87,7 @@ const router = Router();
 //     products.splice(prodIndex, 1);
 //    return res.status(200).send({msg:"Product deleted successfully"});
 // })
+
 //get all products
 router.get(
   "/api/products",

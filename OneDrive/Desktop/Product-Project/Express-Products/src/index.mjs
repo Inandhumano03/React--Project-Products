@@ -5,10 +5,10 @@ import cookieParser from "cookie-parser";
 import session from "express-session";
 import { Strategy as LocalStrategy } from "passport-local";
 import passport from "passport";
-import User  from '../src/mongoose/schema/user.mjs'
+import User from '../src/mongoose/schema/user.mjs'
 import routes from "./routes/router.mjs"
 import mongoose from "mongoose";
-import { comparePassword } from "./utils/helper.mjs";
+import { comparePassword } from "./utils/bcrypt.mjs";
 import connectDB from "./db/connectDB.mjs";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -54,28 +54,31 @@ app.use(passport.initialize());
 
 passport.use(
   new LocalStrategy(
-    { usernameField: "user_name", passwordField: "password" },
+    {
+      usernameField: "user_name",
+      passwordField: "password",
+    },
     async (user_name, password, done) => {
-      console.log("Username received:", user_name);
-
       try {
         const user = await User.findOne({ user_name });
 
-        console.log("User found:", user);
-
         if (!user) {
-          return done(null, false, { msg: "Invalid Username" });
+          return done(null, false, {
+            message: "No user available",
+          });
         }
 
         const isMatch = await comparePassword(password, user.password);
 
         if (!isMatch) {
-          return done(null, false, { msg: "Incorrect Password" });
+          return done(null, false, {
+            message: "Incorrect password",
+          });
         }
 
         return done(null, user);
+
       } catch (err) {
-        console.log(err);
         return done(err);
       }
     }

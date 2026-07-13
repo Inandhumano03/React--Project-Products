@@ -4,14 +4,14 @@ const userSchema = new mongoose.Schema(
   {
     user_name: {
       type: String,
-      required: [true, "Username is required"],
+      required: true,
       trim: true,
       unique: true,
     },
 
     email: {
       type: String,
-      required: [true, "Email is required"],
+      required: true,
       trim: true,
       lowercase: true,
       unique: true,
@@ -19,14 +19,19 @@ const userSchema = new mongoose.Schema(
 
     password: {
       type: String,
-      required: [true, "Password is required"],
+      default: null,   // Google users won't have a password
     },
 
     role: {
       type: String,
       enum: ["user", "admin"],
       default: "user",
-      required: true,
+    },
+
+    authProvider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
     },
   },
   {
@@ -34,4 +39,4 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-export default mongoose.model("User",userSchema);
+export default mongoose.model("User", userSchema);
