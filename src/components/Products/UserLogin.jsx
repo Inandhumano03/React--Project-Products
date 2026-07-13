@@ -23,7 +23,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { instance } from "../axios";
 import useDocumentTitle from "../hooks/UseDocumentTitle";
-
+import { GoogleLogin } from "@react-oauth/google";
 const UserLogin = () => {
   useDocumentTitle(
     "Login"
@@ -82,7 +82,7 @@ const UserLogin = () => {
   const handleSubmit = async (e) => {
 
     e.preventDefault();
-
+    console.log("handleSubmit called");
     if (!validate()) {
       toast.warning("Please fill in all required fields correctly.");
       return;
@@ -149,7 +149,68 @@ const UserLogin = () => {
 
     }
   };
+  const handleGoogleSuccess = async (response) => {
+    try {
+      const res = await instance.post("/google-login", {
+        credential: response.credential,
+      });
 
+      localStorage.setItem(
+        "accessToken",
+        res.data.accessToken
+      );
+
+      localStorage.setItem(
+        "refreshToken",
+        res.data.refreshToken
+      );
+
+      localStorage.setItem(
+        "role",
+        res.data.user.role
+      );
+
+      toast.success(
+        res.data.message || "Google Login Successful"
+      );
+
+      navigate("/ProductList");
+
+    } catch (err) {
+
+      if (err.response) {
+
+        switch (err.response.status) {
+
+          case 400:
+            toast.error(
+              err.response.data.message || "Invalid Google credentials"
+            );
+            break;
+
+          case 401:
+            toast.error(
+              err.response.data.message || "Google Authentication Failed"
+            );
+            break;
+
+          case 500:
+            toast.error(
+              err.response.data.message || "Google Login Failed"
+            );
+            break;
+
+          default:
+            toast.error("Google Login Failed");
+        }
+
+      } else {
+
+        toast.error("Unable to connect to server");
+
+      }
+    }
+  };
 
   return (
     <Box
@@ -295,11 +356,9 @@ const UserLogin = () => {
                   textTransform: "none",
                   fontSize: "1rem",
                 }}
-                onClick={handleSubmit}
               >
                 {loading ? "Logging in..." : "Login"}
               </Button>
-
               <Box
                 sx={{
                   mt: 3,
@@ -327,6 +386,19 @@ const UserLogin = () => {
                 >
                   Register
                 </Typography>
+                OR
+
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                  }}
+                >
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={() => toast.error("Google Login Failed")}
+                  />
+                </Box>
               </Box>
             </form>
           </CardContent>

@@ -24,53 +24,48 @@ instance.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// ------------------------
+
 // Response Interceptor
-// ------------------------
-
 instance.interceptors.response.use(
+  (response) => response,
 
-    (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
 
-    async (error) => {
-
-        const originalRequest = error.config;
-
-        // If access token expired, try to refresh it
-        if (
-            (error.response?.status === 401 ||
-             error.response?.status === 403) &&
-            !originalRequest._retry
-        ) {
-
-            originalRequest._retry = true;
-
-            try {
-
-                const response = await instance.post("/api/refresh");
-
-                const newAccessToken = response.data.accessToken;
-
-                localStorage.setItem(
-                    "accessToken",
-                    newAccessToken
-                );
-
-                originalRequest.headers.Authorization =
-                    `Bearer ${newAccessToken}`;
-
-                return instance(originalRequest);
-
-            } catch (refreshError) {
-
-                localStorage.removeItem("accessToken");
-
-                window.location.href = "/";
-
-                return Promise.reject(refreshError);
-            }
-        }
-
-        return Promise.reject(error);
+    // Don't refresh token for login requests
+    if (
+      originalRequest.url === "/login" ||
+      originalRequest.url === "/google-login"
+    ) {
+      return Promise.reject(error);
     }
+
+    if (
+      (error.response?.status === 401 ||
+        error.response?.status === 403) &&
+      !originalRequest._retry
+    ) {
+      originalRequest._retry = true;
+
+      try {
+        const response = await instance.post("/refresh");
+
+        const newAccessToken = response.data.accessToken;
+
+        localStorage.setItem("accessToken", newAccessToken);
+
+        originalRequest.headers.Authorization =
+          `Bearer ${newAccessToken}`;
+
+        return instance(originalRequest);
+
+      } catch (refreshError) {
+        localStorage.removeItem("accessToken");
+        window.location.href = "/";
+        return Promise.reject(refreshError);
+      }
+    }
+
+    return Promise.reject(error);
+  }
 );

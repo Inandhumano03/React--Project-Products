@@ -1,3 +1,0 @@
-useDocumentTitle(
- "Dashboard"
-);

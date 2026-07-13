@@ -10,7 +10,9 @@ import {
 
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-
+import { useState } from "react";
+import {Dialog} from "@mui/material";
+import {DialogContent} from "@mui/material";
 const ProductCard = ({
   product,
   darkMode,
@@ -20,6 +22,8 @@ const ProductCard = ({
   startEditing,
   handleDeleteClick,
 }) => {
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState("");
   return (
     <Card
       sx={{
@@ -50,15 +54,42 @@ const ProductCard = ({
             component="img"
             image={product.image}
             alt={product.title}
+            onClick={() => {
+              setPreviewImage(product.image);
+              setPreviewOpen(true);
+            }}
             sx={{
               width: 110,
               height: 110,
               borderRadius: 2,
               objectFit: "cover",
               flexShrink: 0,
+              cursor: "pointer",
             }}
           />
         )}
+        <Dialog
+          open={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          maxWidth="md"
+        >
+          <DialogContent
+            sx={{
+              p: 0,
+              bgcolor: "black",
+            }}
+          >
+            <img
+              src={previewImage}
+              alt="Preview"
+              style={{
+                width: "100%",
+                height: "auto",
+                display: "block",
+              }}
+            />
+          </DialogContent>
+        </Dialog>
 
         {/* Product Details */}
         <Box sx={{ flex: 1 }}>
@@ -81,37 +112,36 @@ const ProductCard = ({
             {expandedId === product._id
               ? product.description
               : `${product.description.slice(
-                  0,
-                  120
-                )}${
-                  product.description.length > 120
-                    ? "..."
-                    : ""
-                }`}
+                0,
+                120
+              )}${product.description.length > 120
+                ? "..."
+                : ""
+              }`}
           </Typography>
 
           {product.description.length >
             120 && (
-            <Button
-              size="small"
-              sx={{
-                mt: 1,
-                p: 0,
-              }}
-              onClick={() =>
-                setExpandedId(
-                  expandedId === product._id
-                    ? null
-                    : product._id
-                )
-              }
-            >
-              {expandedId ===
-              product._id
-                ? "See Less"
-                : "See More"}
-            </Button>
-          )}
+              <Button
+                size="small"
+                sx={{
+                  mt: 1,
+                  p: 0,
+                }}
+                onClick={() =>
+                  setExpandedId(
+                    expandedId === product._id
+                      ? null
+                      : product._id
+                  )
+                }
+              >
+                {expandedId ===
+                  product._id
+                  ? "See Less"
+                  : "See More"}
+              </Button>
+            )}
 
           {role === "admin" && (
             <Stack
