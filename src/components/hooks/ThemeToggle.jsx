@@ -28,7 +28,7 @@ export default function ThemeToggle() {
 
       }}
     >
-      <LightModeIcon />
+      {/* <LightModeIcon /> */}
 
       <Switch
         checked={darkMode}
@@ -36,7 +36,7 @@ export default function ThemeToggle() {
         color="warning"
       />
 
-      <DarkModeIcon />
+      {/* <DarkModeIcon /> */}
     </Box>
   );
 }

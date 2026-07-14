@@ -57,7 +57,7 @@ function AppContent() {
           }
         />
 
-        <Route
+        {/* <Route
           path="/add-product"
           element={
             role === "admin" ? (
@@ -74,7 +74,7 @@ function AppContent() {
               </Typography>
             )
           }
-        />
+        /> */}
 
         <Route
           path="/excel-api"
@@ -99,7 +99,6 @@ function App() {
   const {
     darkMode
   } = useContext(ThemeContext);
-  const [products, setProducts] = useState([]);
 
 
 

@@ -23,25 +23,25 @@ import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
 
-const navigate = useNavigate();
+  const navigate = useNavigate();
   const role = localStorage.getItem("role")?.toLowerCase();
   const { darkMode } = useContext(ThemeContext);
   const handleLogout = async () => {
     try {
-        await instance.post("/logout");
+      await instance.post("/logout");
 
-        // Remove access token from localStorage/sessionStorage
-        localStorage.removeItem("accessToken");
+      // Remove access token from localStorage/sessionStorage
+      localStorage.removeItem("accessToken");
 
-        toast.success("Logged out successfully");
+      toast.success("Logged out successfully");
 
-        navigate("/");
+      navigate("/");
 
     } catch (err) {
-        console.error(err);
-        toast.error("Logout failed");
+      console.error(err);
+      toast.error("Logout failed");
     }
-};
+  };
   return (
     <AppBar
       position="sticky"
@@ -54,9 +54,10 @@ const navigate = useNavigate();
         sx={{
           display: "flex",
           justifyContent: "space-between",
+          alignItems: "center",
         }}
       >
-        {/* Logo */}
+        {/* Left - Logo */}
         <Box
           sx={{
             display: "flex",
@@ -66,19 +67,18 @@ const navigate = useNavigate();
         >
           <ShoppingCartIcon />
 
-          <Typography
-            variant="h5"
-            fontWeight="bold"
-          >
+          <Typography variant="h5" fontWeight="bold">
             ProductHub
           </Typography>
         </Box>
 
-        {/* Navigation */}
+        {/* Center - Navigation */}
         <Box
           sx={{
             display: "flex",
             gap: 2,
+            flex: 1,
+            justifyContent: "center",
           }}
         >
           <Button
@@ -95,22 +95,6 @@ const navigate = useNavigate();
           >
             Products
           </Button>
-          {role === "admin" && (
-            <Button
-              component={NavLink}
-              to="/add-product"
-              color="inherit"
-              startIcon={<AddCircleIcon />}
-              sx={{
-                "&.active": {
-                  bgcolor: "rgba(255,255,255,0.18)",
-                  borderRadius: 2,
-                },
-              }}
-            >
-              Add Product
-            </Button>
-          )}
 
           <Button
             component={NavLink}
@@ -126,31 +110,37 @@ const navigate = useNavigate();
           >
             Excel Upload
           </Button>
+        </Box>
+
+        {/* Right - Theme + Logout */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+          }}
+        >
+          <ThemeToggle />
+
           <Button
-            component={NavLink}
             onClick={handleLogout}
-            nativeButton={false}
             color="inherit"
+            variant="outlined"
             sx={{
-              "&.active": {
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                bgcolor: darkMode ? "#1e293b" : "#1976d2",
-                color: darkMode ? "#fff" : "#000",
-                px: 2,
-                py: 1,
-                borderRadius: 3,
-                boxShadow: 3,
+              borderColor: "white",
+              color: "white",
+              borderRadius: 2,
+              textTransform: "none",
+
+              "&:hover": {
+                borderColor: "white",
+                bgcolor: "rgba(255,255,255,0.12)",
               },
             }}
           >
             Logout
           </Button>
         </Box>
-
-        {/* Theme Toggle */}
-        <ThemeToggle />
       </Toolbar>
     </AppBar>
   );

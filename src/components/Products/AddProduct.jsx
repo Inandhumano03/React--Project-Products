@@ -12,14 +12,12 @@ import { ThemeContext } from "../context/ThemeContext";
 import ThemeToggle from "../hooks/ThemeToggle";
 import { storage } from "../appwrite/config";
 import { ID } from "appwrite";
+
 import {
-  Container,
-  Card,
   Typography,
   TextField,
   Button,
   Stack,
-  Box,
 } from "@mui/material";
 export default function AddProduct({ setProducts }) {
   useDocumentTitle(
@@ -130,16 +128,16 @@ export default function AddProduct({ setProducts }) {
 
       const newProduct = response.data;
 
-      setProducts((prev) => {
-        const updatedProducts = [newProduct, ...prev];
+      // setProducts((prev) => {
+      //   const updatedProducts = [newProduct, ...prev];
 
-        localStorage.setItem(
-          "products",
-          JSON.stringify(updatedProducts)
-        );
+      //   localStorage.setItem(
+      //     "products",
+      //     JSON.stringify(updatedProducts)
+      //   );
 
-        return updatedProducts;
-      });
+      //   return updatedProducts;
+      // });
 
       setState({
         title: "",
@@ -257,214 +255,163 @@ export default function AddProduct({ setProducts }) {
 
   };
   return (
-    <Box
+    <Stack
+      spacing={3}
       sx={{
-        minHeight: "100vh",
-        bgcolor: darkMode ? "#0f172a" : "#f4f6f8",
-        color: darkMode ? "#ffffff" : "#000000",
-        py: 4,
+        p: 2,
       }}
     >
-      <Container
-        maxWidth="sm"
+      <Typography
+        variant="h5"
+        fontWeight="bold"
+        gutterBottom
         sx={{
-          mt: 5,
+          color: darkMode ? "#ffffff" : "#000000",
         }}
-
       >
-        <Card
-          sx={{
-            p: 4,
-            borderRadius: 4,
-            boxShadow: 6,
-            bgcolor: darkMode
-              ? "#1e293b"
-              : "#ffffff",
-            color: darkMode
-              ? "#ffffff"
-              : "#000000",
-          }}
-        >
+        Add Product
+      </Typography>
 
-          <Typography
-            variant="h4"
-            fontWeight="bold"
-            textalign="center"
-            gutterBottom
-            sx={{
-              color: darkMode
-                ? "#ffffff"
-                : "#000000",
-            }}
-          >
-            Add Product
-          </Typography>
+      <TextField
+        fullWidth
+        label="Product Title"
+        variant="outlined"
+        name="title"
+        value={state.title}
+        onChange={handleChange}
+        error={Boolean(errors.title)}
+        helperText={
+          errors.title || `${titleCharacters}/50 Characters`
+        }
+        slotProps={{
+          htmlInput: {
+            maxLength: 50,
+          },
+        }}
+        sx={{
+          "& .MuiInputLabel-root": {
+            color: darkMode ? "#cbd5e1" : "#64748b",
+          },
+          "& .MuiOutlinedInput-root": {
+            color: darkMode ? "#ffffff" : "#000000",
 
+            "& fieldset": {
+              borderColor: darkMode ? "#475569" : "#cbd5e1",
+            },
 
+            "&:hover fieldset": {
+              borderColor: darkMode ? "#94a3b8" : "#64748b",
+            },
 
-          <Stack spacing={3}>
-            <TextField
-              fullWidth
-              label="Product Title"
-              variant="outlined"
-              name="title"
-              value={state.title}
-              onChange={handleChange}
-              error={Boolean(errors.title)}
-              helperText={
-                errors.title ||
-                `${titleCharacters}/50 Characters`
-              }
-              slotProps={{
-                htmlInput: {
-                  maxLength: 50,
-                },
-              }}
+            "&.Mui-focused fieldset": {
+              borderColor: "#1976d2",
+            },
+          },
+        }}
+      />
 
-              sx={{
-                "& .MuiInputLabel-root": {
-                  color: darkMode
-                    ? "#cbd5e1"
-                    : "#64748b",
-                },
+      <TextField
+        fullWidth
+        multiline
+        rows={5}
+        label="Product Description"
+        variant="outlined"
+        name="description"
+        value={state.description}
+        error={Boolean(errors.description)}
+        helperText={
+          errors.description ||
+          `${descriptionCharacters}/200 Characters`
+        }
+        slotProps={{
+          htmlInput: {
+            maxLength: 200,
+          },
+        }}
+        onChange={handleChange}
+        sx={{
+          "& .MuiInputLabel-root": {
+            color: darkMode ? "#cbd5e1" : "#64748b",
+          },
 
-                "& .MuiOutlinedInput-root": {
-                  color: darkMode
-                    ? "#ffffff"
-                    : "#000000",
+          "& .MuiOutlinedInput-root": {
+            color: darkMode ? "#ffffff" : "#000000",
 
-                  "& fieldset": {
-                    borderColor: darkMode
-                      ? "#475569"
-                      : "#cbd5e1",
-                  },
+            "& fieldset": {
+              borderColor: darkMode ? "#475569" : "#cbd5e1",
+            },
 
-                  "&:hover fieldset": {
-                    borderColor: darkMode
-                      ? "#94a3b8"
-                      : "#64748b",
-                  },
+            "&:hover fieldset": {
+              borderColor: darkMode ? "#94a3b8" : "#64748b",
+            },
 
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#1976d2",
-                  },
-                },
-              }}
-            />
+            "&.Mui-focused fieldset": {
+              borderColor: "#1976d2",
+            },
+          },
+        }}
+      />
 
-            <TextField
-              fullWidth
-              multiline
-              rows={5}
-              label="Product Description"
-              variant="outlined"
-              name="description"
-              value={state.description}
-              error={Boolean(errors.title)}
-              helperText={
-                errors.description ||
-                `${descriptionCharacters}/200 Characters`
-              }
-              slotProps={{
-                htmlInput: {
-                  maxLength: 200,
-                },
-              }}
-              onChange={handleChange}
-              sx={{
-                "& .MuiInputLabel-root": {
-                  color: darkMode
-                    ? "#cbd5e1"
-                    : "#64748b",
-                },
+      {state.title && (
+        <Typography color="success.main" variant="body2">
+          Preview: {state.title}
+        </Typography>
+      )}
 
-                "& .MuiOutlinedInput-root": {
-                  color: darkMode
-                    ? "#ffffff"
-                    : "#000000",
+      <Button
+        variant="outlined"
+        component="label"
+      >
+        Choose Product Image
 
-                  "& fieldset": {
-                    borderColor: darkMode
-                      ? "#475569"
-                      : "#cbd5e1",
-                  },
+        <input
+          hidden
+          type="file"
+          accept="image/*"
+          onChange={handleImageChange}
+        />
+      </Button>
 
-                  "&:hover fieldset": {
-                    borderColor: darkMode
-                      ? "#94a3b8"
-                      : "#64748b",
-                  },
+      {state.image && (
+        <Typography>
+          Selected: {state.image.name}
+        </Typography>
+      )}
 
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#1976d2",
-                  },
-                },
-              }}
-            />
-            {state.title && (
-              <Typography
-                color="success.main"
-                variant="body2"
-              >
-                Preview: {state.title}
-              </Typography>
-            )}
-            <Button
-              variant="outlined"
-              component="label"
-            >
-              Choose Product Image
+      <Button
+        variant="contained"
+        size="large"
+        onClick={addProduct}
+        disabled={loading || !isFormValid}
+        sx={{
+          py: 1.5,
+          borderRadius: 2,
+          fontWeight: "bold",
+          textTransform: "none",
+        }}
+      >
+        {loading ? "Adding..." : "Add Product"}
+      </Button>
 
-              <input
-                hidden
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-              />
-            </Button>
-            {state.image && (
-              <Typography>
-                Selected:
-                {state.image.name}
-              </Typography>
-            )}
-            <Button
-              variant="contained"
-              size="large"
-              onClick={addProduct}
-              disabled={loading || !isFormValid}
-              sx={{
-                py: 1.5,
-                borderRadius: 2,
-                fontWeight: "bold",
-                textTransform: "none",
-              }}
-            >
-              {loading ? "Adding..." : "Add Product"}
-            </Button>
-            <Button
-              color="secondary"
-              variant="outlined"
-              onClick={() => {
-                setState({
-                  title: "",
-                  description: "",
-                  image: null,
-                });
+      <Button
+        color="secondary"
+        variant="outlined"
+        onClick={() => {
+          setState({
+            title: "",
+            description: "",
+            image: null,
+          });
 
-                setErrors({
-                  title: "",
-                  description: "",
-                  image: null,
-                });
-              }}
-            >
-              Reset
-            </Button>
-
-          </Stack>
-        </Card>
-      </Container>
-    </Box>
+          setErrors({
+            title: "",
+            description: "",
+            image: "",
+          });
+        }}
+      >
+        Reset
+      </Button>
+    </Stack>
   );
 }

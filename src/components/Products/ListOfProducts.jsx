@@ -18,6 +18,8 @@ import {
   DialogContentText,
   DialogActions,
 } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import IconButton from "@mui/material/IconButton";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import { toast, ToastContainer } from "react-toastify";
 import EditIcon from "@mui/icons-material/Edit";
@@ -26,10 +28,12 @@ import SaveIcon from "@mui/icons-material/Save";
 import CancelIcon from "@mui/icons-material/Cancel";
 import useDocumentTitle from "../hooks/UseDocumentTitle";
 import useProductManager from "../hooks/useProductManager";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { ThemeContext } from "../context/ThemeContext";
-import  ProductEditForm from "../../components/Products/ProductEditForm"
-import  ProductCard  from "../../components/Products/ProductCard"
+import ProductEditForm from "../../components/Products/ProductEditForm"
+import ProductCard from "../../components/Products/ProductCard"
+import AddIcon from "@mui/icons-material/Add";
+import AddProduct from "./AddProduct"; // adjust path if needed
 export default function
   ListOfProducts({
     products,
@@ -64,6 +68,8 @@ export default function
   const { darkMode } =
     useContext(ThemeContext);
 
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [openAddDialog, setOpenAddDialog] = useState(false);
   return (
     <Container
       maxWidth="xl"
@@ -157,6 +163,43 @@ export default function
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Dialog
+        open={openAddDialog}
+        onClose={() => setOpenAddDialog(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            fontWeight: "bold",
+          }}
+        >
+          Add Product
+
+          <Button
+            color="error"
+            startIcon={<CloseIcon />}
+            onClick={() => setOpenAddDialog(false)}
+          >
+            Close
+          </Button>
+        </DialogTitle>
+
+        <DialogContent dividers>
+          <AddProduct
+            setProducts={setProducts}
+          />
+        </DialogContent>
+      </Dialog>
       <Typography
         variant="h4"
         fontWeight="bold"
@@ -180,48 +223,69 @@ export default function
         Total Products: {products.length}
       </Typography>
 
-      <TextField
-        fullWidth
-        label="Search Products"
-        variant="outlined"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        sx={{
-          mb: 4,
+      <Stack
+        direction="row"
+        spacing={2}
+        alignItems="center"
+        sx={{ mb: 4 }}
+      >
+        <TextField
+          fullWidth
+          label="Search Products"
+          variant="outlined"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          sx={{
+            "& .MuiOutlinedInput-root": {
+              bgcolor: darkMode ? "#1e293b" : "#ffffff",
+              color: darkMode ? "#ffffff" : "#000000",
+              borderRadius: 3,
 
-          "& .MuiOutlinedInput-root": {
-            bgcolor: darkMode ? "#1e293b" : "#ffffff",
-            color: darkMode ? "#ffffff" : "#000000",
-            borderRadius: 3,
+              "& fieldset": {
+                borderColor: darkMode ? "#475569" : "#d1d5db",
+              },
 
-            "& fieldset": {
-              borderColor: darkMode ? "#475569" : "#d1d5db",
+              "&:hover fieldset": {
+                borderColor: darkMode ? "#94a3b8" : "#1976d2",
+              },
+
+              "&.Mui-focused fieldset": {
+                borderColor: "#1976d2",
+                borderWidth: "2px",
+              },
             },
 
-            "&:hover fieldset": {
-              borderColor: darkMode ? "#94a3b8" : "#1976d2",
+            "& .MuiInputLabel-root": {
+              color: darkMode ? "#cbd5e1" : "#64748b",
             },
 
-            "&.Mui-focused fieldset": {
-              borderColor: "#1976d2",
-              borderWidth: "2px",
+            "& .MuiInputLabel-root.Mui-focused": {
+              color: "#1976d2",
             },
-          },
+          }}
+        />
 
-          "& .MuiInputLabel-root": {
-            color: darkMode ? "#cbd5e1" : "#64748b",
-          },
-
-          "& .MuiInputLabel-root.Mui-focused": {
-            color: "#1976d2",
-          },
-
-          "& .MuiInputBase-input::placeholder": {
-            color: darkMode ? "#94a3b8" : "#9ca3af",
-            opacity: 1,
-          },
-        }}
-      />
+        {role === "admin" && (
+          <Button
+            variant="contained"
+            onClick={() => setOpenAddDialog(true)}
+            sx={{
+              minWidth: 55,
+              height: 55,
+              borderRadius: "50%",
+            }}
+          >
+            <AddIcon />
+          </Button>
+        )}
+      </Stack>
+      {showAddProduct && (
+        <Box sx={{ mb: 4 }}>
+          <AddProduct
+            setProducts={setProducts}
+          />
+        </Box>
+      )}
       <Typography
         variant="body1"
         sx={{
@@ -281,29 +345,29 @@ export default function
                   }}
                 >
 
-                 { editingId === product._id ? (
-                  <ProductEditForm
-                    product={product}
-                    darkMode={darkMode}
-                    editTitle={editTitle}
-                    setEditTitle={setEditTitle}
-                    editDescription={editDescription}
-                    setEditDescription={setEditDescription}
-                    updateProduct={updateProduct}
-                    setEditingId={setEditingId}
-                  />
+                  {editingId === product._id ? (
+                    <ProductEditForm
+                      product={product}
+                      darkMode={darkMode}
+                      editTitle={editTitle}
+                      setEditTitle={setEditTitle}
+                      editDescription={editDescription}
+                      setEditDescription={setEditDescription}
+                      updateProduct={updateProduct}
+                      setEditingId={setEditingId}
+                    />
                   ) : (
-                  <ProductCard
-                    product={product}
-                    darkMode={darkMode}
-                    expandedId={expandedId}
-                    setExpandedId={setExpandedId}
-                    role={role}
-                    startEditing={startEditing}
-                    handleDeleteClick={handleDeleteClick}
-                  />
+                    <ProductCard
+                      product={product}
+                      darkMode={darkMode}
+                      expandedId={expandedId}
+                      setExpandedId={setExpandedId}
+                      role={role}
+                      startEditing={startEditing}
+                      handleDeleteClick={handleDeleteClick}
+                    />
                   )
-                }
+                  }
                 </Card>
               </Grid>
             )
