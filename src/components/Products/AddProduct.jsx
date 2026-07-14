@@ -23,12 +23,7 @@ export default function AddProduct({ setProducts }) {
   useDocumentTitle(
     "Add Product"
   );
-  const [openEditDialog, setOpenEditDialog] = useState(false);
-const [selectedProduct, setSelectedProduct] = useState(null);
-const handleEditClick = (product) => {
-  setSelectedProduct(product);
-  setOpenEditDialog(true);
-};
+
   const { darkMode } =
     useContext(ThemeContext);
 
@@ -121,7 +116,12 @@ const handleEditClick = (product) => {
 
       );
       const imageId = uploadResponse.$id;
-      const imageUrl = await uploadImage(state.image);
+      const imageUrl = storage
+        .getFileView(
+          import.meta.env.VITE_APPWRITE_BUCKET_ID,
+          uploadResponse.$id
+        )
+        .toString();
       const response = await instance.post("/products", {
         title: state.title,
         description: state.description,
@@ -271,6 +271,7 @@ const handleEditClick = (product) => {
           color: darkMode ? "#ffffff" : "#000000",
         }}
       >
+        Add Product
       </Typography>
 
       <TextField

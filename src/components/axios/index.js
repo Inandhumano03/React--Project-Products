@@ -24,18 +24,14 @@ instance.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-instance.interceptors.request.use((config) => {
-  console.log("REQUEST DATA:", config.data);
-  return config;
-});
 // Response Interceptor
 instance.interceptors.response.use(
-  (response) => response,
-
+    (response) => response,
+    
   async (error) => {
-    const originalRequest = error.config;
+      const originalRequest = error.config;
 
-    // Don't refresh token for login requests
+      // Don't refresh token for login requests
     if (
       originalRequest.url === "/login" ||
       originalRequest.url === "/google-login"
@@ -52,23 +48,27 @@ instance.interceptors.response.use(
 
       try {
         const response = await instance.post("/refresh");
-
+        
         const newAccessToken = response.data.accessToken;
-
+        
         localStorage.setItem("accessToken", newAccessToken);
-
+        
         originalRequest.headers.Authorization =
-          `Bearer ${newAccessToken}`;
-
+        `Bearer ${newAccessToken}`;
+        
         return instance(originalRequest);
-
-      } catch (refreshError) {
+        
+    } catch (refreshError) {
         localStorage.removeItem("accessToken");
         window.location.href = "/";
         return Promise.reject(refreshError);
-      }
     }
+}
 
-    return Promise.reject(error);
-  }
+return Promise.reject(error);
+}
 );
+instance.interceptors.request.use((config) => {
+  console.log("REQUEST DATA:", config.data);
+  return config;
+});
