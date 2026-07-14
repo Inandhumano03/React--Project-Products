@@ -194,96 +194,109 @@ router.put(
   authorizeRole("admin"),
   async (req, res) => {
     try {
+      console.log("Update Request Body:", req.body);
+
+      const { title, description, image } = req.body;
+
       const updatedProduct = await Product.findByIdAndUpdate(
         req.params.id,
         {
-          title: req.body.title,
-          description: req.body.description,
+          title,
+          description,
+          image,
         },
         {
           new: true,
           runValidators: true,
         }
       );
-      const io = req.app.get("io");
-
-      io.emit("productUpdated", updatedProduct);
 
       if (!updatedProduct) {
         return res.status(404).json({
+          success: false,
           message: "Product not found",
         });
       }
 
-      res.json(updatedProduct);
+      // Emit socket event
+      const io = req.app.get("io");
+      io.emit("productUpdated", updatedProduct);
+
+      console.log("Updated Product:", updatedProduct);
+
+      return res.status(200).json(updatedProduct);
+
     } catch (err) {
-      res.status(500).json({
+      console.error("Update Error:", err);
+
+      return res.status(500).json({
+        success: false,
         message: err.message,
       });
     }
   }
 );
 //patch 
-router.patch("/api/products/:id", async (req, res) => {
-  try {
-    const updatedProduct = await Product.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
+// router.patch("/api/products/:id", async (req, res) => {
+//   try {
+//     const updatedProduct = await Product.findByIdAndUpdate(
+//       req.params.id,
+//       req.body,
+//       {
+//         new: true,
+//         runValidators: true,
+//       }
+//     );
 
-    if (!updatedProduct) {
-      return res.status(404).json({
-        message: "Product not found",
-      });
-    }
+//     if (!updatedProduct) {
+//       return res.status(404).json({
+//         message: "Product not found",
+//       });
+//     }
 
-    res.json(updatedProduct);
-  } catch (err) {
-    res.status(500).json({
-      message: err.message,
-    });
-  }
-});
+//     res.json(updatedProduct);
+//   } catch (err) {
+//     res.status(500).json({
+//       message: err.message,
+//     });
+//   }
+// });
 
 //delete product
 router.delete(
-    "/api/products/:id",
-    verifyJWT,
-    authorizeRole("admin"),
-    async (req, res) => {
+  "/api/products/:id",
+  verifyJWT,
+  authorizeRole("admin"),
+  async (req, res) => {
 
-        try {
+    try {
 
-            const product = await Product.findByIdAndDelete(req.params.id);
+      const product = await Product.findByIdAndDelete(req.params.id);
 
-            if (!product) {
+      if (!product) {
 
-                return res.status(404).json({
-                    message: "Product not found"
-                });
+        return res.status(404).json({
+          message: "Product not found"
+        });
 
-            }
+      }
 
-            const io = req.app.get("io");
+      const io = req.app.get("io");
 
-            io.emit("productDeleted", product);
+      io.emit("productDeleted", product);
 
-            res.json(product);
+      res.json(product);
 
-        } catch (err) {
+    } catch (err) {
 
-            console.error(err);
+      console.error(err);
 
-            res.status(500).json({
-                message: err.message
-            });
-
-        }
+      res.status(500).json({
+        message: err.message
+      });
 
     }
+
+  }
 );
 export default router;
