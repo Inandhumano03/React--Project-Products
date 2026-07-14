@@ -24,7 +24,10 @@ instance.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-
+instance.interceptors.request.use((config) => {
+  console.log("REQUEST DATA:", config.data);
+  return config;
+});
 // Response Interceptor
 instance.interceptors.response.use(
   (response) => response,

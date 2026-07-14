@@ -9,8 +9,8 @@ import {
   CardActions,
   CardMedia,
   Button,
-  Grid,
 } from "@mui/material";
+import { Grid } from "@mui/material";
 import {
   Dialog,
   DialogTitle,
@@ -19,6 +19,7 @@ import {
   DialogActions,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import { toast, ToastContainer } from "react-toastify";
@@ -67,9 +68,14 @@ export default function
 
   const { darkMode } =
     useContext(ThemeContext);
-
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [openAddDialog, setOpenAddDialog] = useState(false);
+  const handleEditProduct = (product) => {
+    setSelectedProduct(product);
+    setOpenEditDialog(true);
+};
   return (
     <Container
       maxWidth="xl"
@@ -177,10 +183,11 @@ export default function
       >
         <DialogTitle
           sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            position: "relative",
+            textAlign: "center",
             fontWeight: "bold",
+            fontSize: "1.8rem",
+            py: 2.5,
           }}
         >
           Add Product
@@ -189,6 +196,13 @@ export default function
             color="error"
             startIcon={<CloseIcon />}
             onClick={() => setOpenAddDialog(false)}
+            sx={{
+              position: "absolute",
+              right: 16,
+              top: "50%",
+              transform: "translateY(-50%)",
+              textTransform: "uppercase",
+            }}
           >
             Close
           </Button>
@@ -198,6 +212,58 @@ export default function
           <AddProduct
             setProducts={setProducts}
           />
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={openEditDialog}
+        onClose={() => setOpenEditDialog(false)}
+        fullWidth
+        maxWidth="md"
+        scroll="paper"
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            maxHeight: "90vh",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            position: "relative",
+            textAlign: "center",
+            fontWeight: "bold",
+            fontSize: "1.8rem",
+          }}
+        >
+          Edit Product
+
+          <Button
+            color="error"
+            startIcon={<CloseIcon />}
+            onClick={() => setOpenEditDialog(false)}
+            sx={{
+              position: "absolute",
+              right: 16,
+              top: "50%",
+              transform: "translateY(-50%)",
+            }}
+          >
+            Close
+          </Button>
+        </DialogTitle>
+
+        <DialogContent dividers>
+          {selectedProduct && (
+            <ProductEditForm
+              product={selectedProduct}
+              darkMode={darkMode}
+              updateProduct={async (...args) => {
+                await updateProduct(...args);
+                setOpenEditDialog(false);
+              }}
+              setEditingId={() => setOpenEditDialog(false)}
+            />
+          )}
         </DialogContent>
       </Dialog>
       <Typography
@@ -266,17 +332,25 @@ export default function
         />
 
         {role === "admin" && (
-          <Button
-            variant="contained"
-            onClick={() => setOpenAddDialog(true)}
-            sx={{
-              minWidth: 55,
-              height: 55,
-              borderRadius: "50%",
-            }}
+          <Tooltip
+            title="Add Product"
+            arrow
+            placement="bottom"
           >
-            <AddIcon />
-          </Button>
+            <Button
+              variant="contained"
+              onClick={() => setOpenAddDialog(true)}
+              sx={{
+                minWidth: 55,
+                height: 55,
+                borderRadius: "50%",
+              }}
+            >
+              <AddIcon
+
+              />
+            </Button>
+          </Tooltip>
         )}
       </Stack>
       {showAddProduct && (
@@ -309,69 +383,50 @@ export default function
         </Typography>
       ) : (
         <Grid
-          size={12}
+          container
+          spacing={4}
+          alignItems="stretch"
         >
-          {filteredProducts.map(
-            (product) => (
-              <Grid
-                size={12}
-                key={product._id}
+          {filteredProducts.map((product) => (
+            <Grid
+              key={product._id}
+              size={{
+                xs: 12,
+                md: 6,
+              }}
+              sx={{
+                display: "flex",
+              }}
+            >
+              <Card
                 sx={{
-                  mb: 4,
+                  width: "100%",
+                  height: 320,
+                  display: "flex",
+                  flexDirection: "column",
+                  borderRadius: 4,
+                  overflow: "hidden",
+                  bgcolor: darkMode ? "#1e293b" : "#fff",
+                  boxShadow: 5,
+
+                  "&:hover": {
+                    transform: "translateY(-5px)",
+                    boxShadow: 10,
+                  },
                 }}
               >
-                <Card
-                  sx={{
-                    width: "100%",
-
-                    borderRadius: 4,
-
-                    boxShadow: 5,
-
-                    transition: "0.3s",
-
-                    bgcolor: darkMode
-                      ? "#1e293b"
-                      : "#ffffff",
-
-                    color: darkMode
-                      ? "#ffffff"
-                      : "#000000",
-
-                    "&:hover": {
-                      transform: "translateY(-5px)",
-                      boxShadow: 10,
-                    },
-                  }}
-                >
-
-                  {editingId === product._id ? (
-                    <ProductEditForm
-                      product={product}
-                      darkMode={darkMode}
-                      editTitle={editTitle}
-                      setEditTitle={setEditTitle}
-                      editDescription={editDescription}
-                      setEditDescription={setEditDescription}
-                      updateProduct={updateProduct}
-                      setEditingId={setEditingId}
-                    />
-                  ) : (
-                    <ProductCard
-                      product={product}
-                      darkMode={darkMode}
-                      expandedId={expandedId}
-                      setExpandedId={setExpandedId}
-                      role={role}
-                      startEditing={startEditing}
-                      handleDeleteClick={handleDeleteClick}
-                    />
-                  )
-                  }
-                </Card>
-              </Grid>
-            )
-          )}
+                <ProductCard
+                  product={product}
+                  darkMode={darkMode}
+                  expandedId={expandedId}
+                  setExpandedId={setExpandedId}
+                  role={role}
+                  startEditing={handleEditProduct}
+                  handleDeleteClick={handleDeleteClick}
+                />
+              </Card>
+            </Grid>
+          ))}
         </Grid>
       )}
     </Container>

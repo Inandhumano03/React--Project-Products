@@ -11,33 +11,27 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useState } from "react";
-import {Dialog} from "@mui/material";
-import {DialogContent} from "@mui/material";
+import { Dialog } from "@mui/material";
+import { DialogContent } from "@mui/material";
+
 const ProductCard = ({
   product,
   darkMode,
   expandedId,
   setExpandedId,
   role,
-  startEditing,
+ startEditing={handleEditProduct},
   handleDeleteClick,
 }) => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState("");
   return (
-    <Card
+    <Box
       sx={{
         width: "100%",
-        borderRadius: 4,
-        boxShadow: 5,
-        transition: "0.3s",
-        bgcolor: darkMode ? "#1e293b" : "#ffffff",
-        color: darkMode ? "#ffffff" : "#000000",
-
-        "&:hover": {
-          transform: "translateY(-5px)",
-          boxShadow: 10,
-        },
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       <Box
@@ -92,7 +86,14 @@ const ProductCard = ({
         </Dialog>
 
         {/* Product Details */}
-        <Box sx={{ flex: 1 }}>
+        <Box
+          sx={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+          }}
+        >
           <Typography
             variant="h6"
             fontWeight="bold"
@@ -103,20 +104,25 @@ const ProductCard = ({
           <Typography
             variant="body2"
             sx={{
-              color: darkMode
-                ? "#cbd5e1"
-                : "#64748b",
+              color: darkMode ? "#cbd5e1" : "#64748b",
               mt: 1,
+              height: expandedId === product._id ? 120 : 70,
+              overflowY: expandedId === product._id ? "auto" : "hidden",
+              pr: 1,
+
+              "&::-webkit-scrollbar": {
+                width: 5,
+              },
+
+              "&::-webkit-scrollbar-thumb": {
+                backgroundColor: "#94a3b8",
+                borderRadius: 5,
+              },
             }}
           >
             {expandedId === product._id
               ? product.description
-              : `${product.description.slice(
-                0,
-                120
-              )}${product.description.length > 120
-                ? "..."
-                : ""
+              : `${product.description.slice(0, 120)}${product.description.length > 120 ? "..." : ""
               }`}
           </Typography>
 
@@ -147,7 +153,10 @@ const ProductCard = ({
             <Stack
               direction="row"
               spacing={2}
-              sx={{ mt: 2 }}
+              sx={{
+                mt: "auto",
+                pt: 2,
+              }}
             >
               <Button
                 variant="contained"
@@ -175,7 +184,7 @@ const ProductCard = ({
           )}
         </Box>
       </Box>
-    </Card>
+    </Box>
   );
 };
 

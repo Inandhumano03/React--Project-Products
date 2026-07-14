@@ -1,22 +1,22 @@
 import {
-  Box,
-  Stack,
-  Container,
-  Typography,
-  TextField,
-  Card,
-  CardContent,
-  CardActions,
-  CardMedia,
-  Button,
-  Grid,
+    Box,
+    Stack,
+    Container,
+    Typography,
+    TextField,
+    Card,
+    CardContent,
+    CardActions,
+    CardMedia,
+    Button,
+    Grid,
 } from "@mui/material";
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions,
 } from "@mui/material";
 import React, { useState, useRef, useMemo, useCallback, useContext, useEffect } from "react";
 import { instance } from "../axios/index";
@@ -24,6 +24,9 @@ import useDebounce from "../../components/hooks/useDebounce";
 // import ThemeToggle from "./ThemeToggle";
 import { socket } from "../socket";
 import { toast } from "react-toastify";
+import { storage } from "../appwrite/config";
+import { ID } from "appwrite";
+import { uploadImage } from "../utils/uploadImage";
 // import { ToastContainer } from "react-toastify";
 export default function useProductManager(products, setProducts) {
     const role = localStorage.getItem("role");
@@ -242,22 +245,49 @@ export default function useProductManager(products, setProducts) {
     const startEditing = (product) => {
         setEditingId(product._id);
     };
-
+    const handleEditProduct = (product) => {
+        setSelectedProduct(product);
+        setOpenEditDialog(true);
+    };
     const updateProduct = useCallback(
-        async (id, title, description) => {
-
+        async (id, title, description, image) => {
             try {
+                const currentProduct = products.find(
+                    (p) => p._id === id
+                );
+
+                if (!currentProduct) {
+                    toast.error("Product not found");
+                    return;
+                }
+
+                let imageUrl = currentProduct.image;
+
+                // Upload new image only if selected
+                if (image instanceof File) {
+                    const uploadResponse = await storage.createFile(
+                        import.meta.env.VITE_APPWRITE_BUCKET_ID,
+                        ID.unique(),
+                        image
+                    );
+
+                    imageUrl =
+                        `${import.meta.env.VITE_APPWRITE_ENDPOINT}/storage/buckets/${import.meta.env.VITE_APPWRITE_BUCKET_ID
+                        }/files/${uploadResponse.$id}/view?project=${import.meta.env.VITE_APPWRITE_PROJECT_ID
+                        }`;
+                }
 
                 const response = await instance.put(
                     `/products/${id}`,
                     {
                         title,
                         description,
+                        image: imageUrl,
                     }
                 );
 
-                setProducts(prev =>
-                    prev.map(product =>
+                setProducts((prev) =>
+                    prev.map((product) =>
                         product._id === id
                             ? response.data
                             : product
@@ -266,23 +296,18 @@ export default function useProductManager(products, setProducts) {
 
                 setEditingId(null);
 
-                toast.success("Product Updated");
+                toast.success("Product Updated Successfully");
 
             } catch (error) {
-
-                console.log(error);
-
+                console.error(error);
                 toast.error("Update Failed");
-
             }
-
         },
-        [setProducts]
+        [products, setProducts]
     );
-
     const filteredProducts =
-        useMemo(() => { 
-           return products.filter(
+        useMemo(() => {
+            return products.filter(
                 (product) =>
                     product.title
                         ?.toLowerCase()
@@ -303,7 +328,7 @@ export default function useProductManager(products, setProducts) {
         setExpandedId,
 
         editingId,
-
+        setEditingId,
         filteredProducts,
 
         openDialog,
@@ -311,7 +336,7 @@ export default function useProductManager(products, setProducts) {
         handleDeleteClick,
         handleCancelDelete,
         handleConfirmDelete,
-
+        handleEditProduct,
         startEditing,
 
         updateProduct
