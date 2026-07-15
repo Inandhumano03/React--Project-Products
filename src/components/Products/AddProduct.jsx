@@ -12,7 +12,8 @@ import { ThemeContext } from "../context/ThemeContext";
 import ThemeToggle from "../hooks/ThemeToggle";
 import { storage } from "../appwrite/config";
 import { ID } from "appwrite";
-
+import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternateOutlined";
+import RestartAltRoundedIcon from "@mui/icons-material/RestartAltRounded";
 import {
   Typography,
   TextField,
@@ -20,9 +21,9 @@ import {
   Stack,
 } from "@mui/material";
 export default function AddProduct({ setProducts }) {
-  useDocumentTitle(
-    "Add Product"
-  );
+  // useDocumentTitle(
+  //   "Add Product"
+  // );
 
   const { darkMode } =
     useContext(ThemeContext);
@@ -263,7 +264,7 @@ export default function AddProduct({ setProducts }) {
         p: 2,
       }}
     >
-      <Typography
+      {/* <Typography
         variant="h5"
         fontWeight="bold"
         gutterBottom
@@ -272,7 +273,7 @@ export default function AddProduct({ setProducts }) {
         }}
       >
         Add Product
-      </Typography>
+      </Typography> */}
 
       <TextField
         fullWidth
@@ -359,24 +360,117 @@ export default function AddProduct({ setProducts }) {
           Preview: {state.title}
         </Typography>
       )}
-
-      <Button
-        variant="outlined"
-        component="label"
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={2}
+        alignItems="center"
+        sx={{ width: "100%" }}
       >
-        Choose Product Image
+        <Button
+          component="label"
+          variant="outlined"
+          startIcon={<AddPhotoAlternateOutlinedIcon />}
+          sx={{
+            flex: 1,
+            height: 56,
+            borderRadius: "18px",
+            textTransform: "none",
+            fontWeight: 600,
+            fontSize: "0.95rem",
 
-        <input
-          hidden
-          type="file"
-          accept="image/*"
-          onChange={handleImageChange}
-        />
-      </Button>
+            color: darkMode ? "#E2E8F0" : "#2563EB",
+
+            border: darkMode
+              ? "1px solid rgba(255,255,255,.15)"
+              : "1px solid rgba(37,99,235,.15)",
+
+            background: darkMode
+              ? "rgba(255,255,255,.05)"
+              : "rgba(255,255,255,.7)",
+
+            // backdropFilter: "blur(14px)",
+
+            "&:hover": {
+              background: darkMode
+                ? "rgba(255,255,255,.10)"
+                : "rgba(37,99,235,.08)",
+
+              transform: "translateY(-2px)",
+
+              borderColor: "#2563EB",
+            },
+
+            transition: ".3s",
+          }}
+        >
+          Upload Image
+
+          <input
+            hidden
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+          />
+        </Button>
+
+        <Button
+          variant="outlined"
+          startIcon={<RestartAltRoundedIcon />}
+          onClick={() => {
+            setState({
+              title: "",
+              description: "",
+              image: null,
+            });
+
+            setErrors({
+              title: "",
+              description: "",
+              image: "",
+            });
+          }}
+          sx={{
+            flex: 1,
+            height: 56,
+            borderRadius: "18px",
+            textTransform: "none",
+            fontWeight: 600,
+            fontSize: "0.95rem",
+
+            color: "#EF4444",
+
+            border: "1px solid rgba(239,68,68,.2)",
+
+            background: darkMode
+              ? "rgba(239,68,68,.08)"
+              : "rgba(254,242,242,.9)",
+
+            backdropFilter: "blur(14px)",
+
+            "&:hover": {
+              background: "#EF4444",
+              color: "#fff",
+              transform: "translateY(-2px)",
+            },
+
+            transition: ".3s",
+          }}
+        >
+          Reset
+        </Button>
+      </Stack>
 
       {state.image && (
-        <Typography>
-          Selected: {state.image.name}
+        <Typography
+          sx={{
+            mt: 1,
+            ml: 1,
+            color: darkMode ? "#94A3B8" : "#64748B",
+            fontSize: "0.9rem",
+            fontWeight: 500,
+          }}
+        >
+          ✓ {state.image.name}
         </Typography>
       )}
 
@@ -393,27 +487,10 @@ export default function AddProduct({ setProducts }) {
         }}
       >
         {loading ? "Adding..." : "Add Product"}
+
       </Button>
 
-      <Button
-        color="secondary"
-        variant="outlined"
-        onClick={() => {
-          setState({
-            title: "",
-            description: "",
-            image: null,
-          });
 
-          setErrors({
-            title: "",
-            description: "",
-            image: "",
-          });
-        }}
-      >
-        Reset
-      </Button>
     </Stack>
   );
 }
